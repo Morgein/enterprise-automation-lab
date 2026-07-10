@@ -4,10 +4,10 @@
   ansible.builtin.debug:
     msg:
       - "Inventory hostname: {{ inventory_hostname }}"
-      - "System hostname: {{ ansible_hostname }}"
-      - "Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
-      - "Kernel: {{ ansible_kernel }}"
-      - "Architecture: {{ ansible_architecture }}"
+      - "System hostname: {{ ansible_facts['hostname'] }}"
+      - "Distribution: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+      - "Kernel: {{ ansible_facts['kernel'] }}"
+      - "Architecture: {{ ansible_facts['architecture'] }}"
 
 - name: Update apt package cache
   ansible.builtin.apt:
