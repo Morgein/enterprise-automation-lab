@@ -1,0 +1,9 @@
+---
+- name: Apply Linux baseline configuration
+  hosts: web-01
+  become: true
+  gather_facts: true
+
+
+  roles:
+    - linux_baseline

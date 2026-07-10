@@ -1,0 +1,30 @@
+---
+
+- name: Show basic host information
+  ansible.builtin.debug:
+    msg:
+      - "Inventory hostname: {{ inventory_hostname }}"
+      - "System hostname: {{ ansible_hostname }}"
+      - "Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "Kernel: {{ ansible_kernel }}"
+      - "Architecture: {{ ansible_architecture }}"
+
+- name: Update apt package cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: "{{ apt_cache_valid_time }}"
+
+
+- name: Install baseline packages
+  ansible.builtin.apt:
+    name: "{{ baseline_packages }}"
+    state: present
+
+- name: Validate hostname command
+  ansible.builtin.command: hostname
+  register: hostname_result
+  changed_when: false
+
+- name: Show hostname command result
+  ansible.builtin.debug:
+    var: hostname_result.stdout
