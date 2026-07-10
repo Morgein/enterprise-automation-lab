@@ -12,19 +12,25 @@
 - name: Update apt package cache
   ansible.builtin.apt:
     update_cache: true
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ linux_baseline_apt_cache_valid_time }}"
 
 
 - name: Install baseline packages
   ansible.builtin.apt:
-    name: "{{ baseline_packages }}"
+    name: "{{ linux_baseline_packages }}"
     state: present
+
+- name: Ensure SSH service is enabled and running
+  ansible.builtin.service:
+    name: "{{ linux_baseline_ssh_service_name }}"
+    state: started
+    enabled: true
 
 - name: Validate hostname command
   ansible.builtin.command: hostname
-  register: hostname_result
+  register: linux_baseline_hostname_result
   changed_when: false
 
 - name: Show hostname command result
   ansible.builtin.debug:
-    var: hostname_result.stdout
+    var: linux_baseline_hostname_result.stdout

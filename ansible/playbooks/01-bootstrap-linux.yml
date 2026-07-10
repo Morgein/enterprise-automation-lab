@@ -9,24 +9,24 @@
       ansible.builtin.debug:
         msg:
           - "Inventory hostname: {{ inventory_hostname }}"
-          - "System hostname: {{ ansible_hostname }}"
-          - "Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
-          - "Kernel: {{ ansible_kernel }}"
-          - "Architecture: {{ ansible_architecture }}"
+          - "System hostname: {{ ansible_facts['hostname'] }}"
+          - "Distribution: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+          - "Kernel: {{ ansible_facts['kernel'] }}"
+          - "Architecture: {{ ansible_facts['architecture'] }}"
 
     - name: Update apt package cache
       ansible.builtin.apt:
         update_cache: true
-        cache_valid_time: "{{ apt_cache_valid_time }}"
+        cache_valid_time: "{{ linux_baseline_apt_cache_valid_time }}"
 
     - name: Install baseline packages
       ansible.builtin.apt:
-        name: "{{ baseline_packages }}"
+        name: "{{ linux_baseline_packages }}"
         state: present
 
     - name: Ensure SSH service is enabled and running
       ansible.builtin.service:
-        name: "{{ ssh_service_name  }}"
+        name: "{{ linux_baseline_ssh_service_name }}"
         state: started
         enabled: true
 

@@ -1,0 +1,14 @@
+---
+profile: basic
+
+exclude_paths:
+  - .git/
+  - .venv/
+  - venv/
+  - ansible/.venv/
+  - terraform/.terraform/
+
+warn_list:
+  - experimental
+
+skip_list: []
