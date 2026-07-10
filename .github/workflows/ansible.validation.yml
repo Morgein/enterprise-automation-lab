@@ -1,0 +1,57 @@
+---
+name: Ansible Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ansible-validation:
+    name: Validate Ansible Code
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ansible
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validation tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible ansible-lint yamllint
+
+      - name: Show tool versions
+        run: |
+          python --version
+          ansible --version
+          ansible-lint --version
+          yamllint --version
+
+      - name: Run yamllint
+        working-directory: .
+        run: yamllint .
+
+      - name: Run ansible-lint
+        run: ansible-lint .
+
+      - name: Syntax check bootstrap playbook
+        run: ansible-playbook playbooks/01-bootstrap-linux.yml --syntax-check
+
+      - name: Syntax check role-based baseline playbook
+        run: ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
