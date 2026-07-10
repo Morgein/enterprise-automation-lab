@@ -1,0 +1,51 @@
+---
+- name: Bootstrap Linux managed node
+  hosts: web-01
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Show basic host information
+      ansible.builtin.debug:
+        msg:
+          - "Inventory hostname: {{ inventory_hostname }}"
+          - "System hostname: {{ ansible_hostname }}"
+          - "Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Kernel: {{ ansible_kernel }}"
+          - "Architecture: {{ ansible_architecture }}"
+
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install baseline packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - vim
+          - nano
+          - htop
+          - net-tools
+          - unzip
+          - git
+          - python3
+          - python3-pip
+          - openssh-server
+        state: present
+
+    - name: Ensure SSH service is enabled and running
+      ansible.builtin.service:
+        name: ssh
+        state: started
+        enabled: true
+
+    - name: Validate hostname command
+      ansible.builtin.command: hostname
+      register: hostname_result
+      changed_when: false
+
+    - name: Show hostname command result
+      ansible.builtin.debug:
+        var: hostname_result.stdout
