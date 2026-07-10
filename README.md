@@ -1,6 +1,6 @@
 # Enterprise Automation Lab
 
-[![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
+[![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
 
 ## Project Overview
 
