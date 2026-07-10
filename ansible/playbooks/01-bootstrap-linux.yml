@@ -17,27 +17,16 @@
     - name: Update apt package cache
       ansible.builtin.apt:
         update_cache: true
-        cache_valid_time: 3600
+        cache_valid_time: "{{ apt_cache_valid_time }}"
 
     - name: Install baseline packages
       ansible.builtin.apt:
-        name:
-          - curl
-          - wget
-          - vim
-          - nano
-          - htop
-          - net-tools
-          - unzip
-          - git
-          - python3
-          - python3-pip
-          - openssh-server
+        name: "{{ baseline_packages }}"
         state: present
 
     - name: Ensure SSH service is enabled and running
       ansible.builtin.service:
-        name: ssh
+        name: "{{ ssh_service_name  }}"
         state: started
         enabled: true
 
