@@ -970,33 +970,37 @@ ansible web-01 -m command -a "systemctl is-active ssh"
 
 ---
 
-## 17. Validation Screenshots
+## 17. Validation Evidence
 
-Screenshots for this stage can be stored in:
+The following screenshots provide evidence that the first reusable Ansible role was created, validated and executed successfully.
 
-```text
-docs/screenshots/stage-01-ansible-basics/
-```
+### Linux Baseline Role Structure
 
-Recommended screenshots:
+The screenshot shows the final structure of the `linux_baseline` role, including `defaults`, `handlers`, `meta` and `tasks`.
 
-| Screenshot | Description |
-|---|---|
-| 01-syntax-check.png | Successful playbook syntax check |
-| 02-first-playbook-run.png | First playbook execution |
-| 03-second-idempotency-run.png | Second playbook run showing fewer changes |
-| 04-post-run-validation.png | htop and SSH service validation |
+![Linux baseline role structure](../screenshots/stage-01-ansible-basics/01-linux-baseline-role-tree.png)
 
-Example markdown links:
+### Linux Baseline Role Idempotency
 
-```markdown
-![Ansible syntax check](../screenshots/stage-01-ansible-basics/01-syntax-check.png)
+The screenshot shows a repeated execution of the role-based baseline playbook.  
+The result confirms that the playbook completed successfully with `failed=0`, `unreachable=0` and no unnecessary changes.
 
-![First playbook run](../screenshots/stage-01-ansible-basics/02-first-playbook-run.png)
+![Linux baseline idempotency](../screenshots/stage-01-ansible-basics/02-linux-baseline-idempotency.png)
 
-![Second idempotency run](../screenshots/stage-01-ansible-basics/03-second-idempotency-run.png)
+### Lint Validation
 
-![Post-run validation](../screenshots/stage-01-ansible-basics/04-post-run-validation.png)
+The screenshot shows successful YAML and Ansible lint validation.  
+This confirms that the Ansible structure follows the current linting rules used in the project.
+
+![Ansible and YAML lint validation](../screenshots/stage-01-ansible-basics/03-ansible-lint-yamllint-passed.png)
+
+### GitHub Actions Validation
+
+The screenshot shows the GitHub Actions validation workflow passing successfully.  
+This confirms that the repository is automatically validated after changes are pushed.
+
+![GitHub Actions passing](../screenshots/stage-01-ansible-basics/04-github-actions-passing.png)
+
 ```
 
 Screenshots are optional but recommended for GitHub evidence.

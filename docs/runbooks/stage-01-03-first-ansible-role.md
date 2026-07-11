@@ -8,27 +8,27 @@ The goal of this stage is to move from a playbook-only Ansible structure to a re
 
 In previous stages, baseline Linux configuration tasks were stored directly inside a playbook.
 
-In this stage, those tasks are moved into a reusable Ansible role:
+In this stage, those tasks were moved into a reusable Ansible role:
 
 ```text
 ansible/roles/linux_baseline/
 ```
 
-This is an important step toward cleaner and more maintainable Ansible architecture.
+This is an important step toward cleaner, reusable and more maintainable Ansible architecture.
 
 ---
 
 ## 2. Why Roles Are Important
 
-A playbook is useful for defining what should be applied to which hosts.
+A playbook is useful for defining which automation should be applied to which hosts.
 
 A role is useful for organizing reusable automation logic.
 
 A clean Ansible design separates responsibilities:
 
 ```text
-Playbook = orchestration
-Role     = reusable configuration logic
+Playbook  = orchestration
+Role      = reusable configuration logic
 Variables = environment-specific data
 ```
 
@@ -37,9 +37,9 @@ Instead of writing all tasks directly inside a playbook, tasks are grouped into 
 This makes automation easier to:
 
 - reuse
-- test
 - maintain
 - extend
+- test
 - document
 - apply to multiple environments
 
@@ -68,7 +68,7 @@ Apply baseline Linux configuration to managed nodes.
 The role currently performs:
 
 - basic host information output
-- apt package cache update
+- APT package cache update
 - baseline package installation
 - SSH service validation
 - hostname command validation
@@ -77,7 +77,7 @@ The role currently performs:
 
 ## 4. Role Directory Structure
 
-Created structure:
+Final structure:
 
 ```text
 ansible/roles/linux_baseline/
@@ -91,25 +91,14 @@ ansible/roles/linux_baseline/
     └── main.yml
 ```
 
-### tasks/
+### Directory Purpose
 
-Contains the main automation tasks.
-
-### defaults/
-
-Contains default role variables.
-
-These can be overridden by inventory variables such as `group_vars`.
-
-### handlers/
-
-Contains event-driven tasks.
-
-Handlers are usually used for restarting services after configuration changes.
-
-### meta/
-
-Contains role metadata such as supported platforms and dependencies.
+| Directory | Purpose |
+|---|---|
+| `tasks/` | Main automation tasks executed by the role |
+| `defaults/` | Default role variables |
+| `handlers/` | Event-driven tasks such as service restarts |
+| `meta/` | Role metadata and dependency information |
 
 ---
 
@@ -129,40 +118,142 @@ Content:
   ansible.builtin.debug:
     msg:
       - "Inventory hostname: {{ inventory_hostname }}"
-      - "System hostname: {{ ansible_hostname }}"
-      - "Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
-      - "Kernel: {{ ansible_kernel }}"
-      - "Architecture: {{ ansible_architecture }}"
+      - "System hostname: {{ ansible_facts['hostname'] }}"
+      - "Distribution: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+      - "Kernel: {{ ansible_facts['kernel'] }}"
+      - "Architecture: {{ ansible_facts['architecture'] }}"
 
 - name: Update apt package cache
   ansible.builtin.apt:
     update_cache: true
-    cache_valid_time: "{{ apt_cache_valid_time }}"
+    cache_valid_time: "{{ linux_baseline_apt_cache_valid_time }}"
 
 - name: Install baseline packages
   ansible.builtin.apt:
-    name: "{{ baseline_packages }}"
+    name: "{{ linux_baseline_packages }}"
     state: present
 
 - name: Ensure SSH service is enabled and running
   ansible.builtin.service:
-    name: "{{ ssh_service_name }}"
+    name: "{{ linux_baseline_ssh_service_name }}"
     state: started
     enabled: true
 
 - name: Validate hostname command
   ansible.builtin.command: hostname
-  register: hostname_result
+  register: linux_baseline_hostname_result
   changed_when: false
 
 - name: Show hostname command result
   ansible.builtin.debug:
-    var: hostname_result.stdout
+    var: linux_baseline_hostname_result.stdout
 ```
 
 ---
 
-## 6. Role Defaults
+## 6. Task Explanation
+
+### Show basic host information
+
+This task prints useful information about the managed node.
+
+It uses Ansible facts:
+
+```yaml
+ansible_facts['hostname']
+ansible_facts['distribution']
+ansible_facts['distribution_version']
+ansible_facts['kernel']
+ansible_facts['architecture']
+```
+
+These facts are collected because the playbook uses:
+
+```yaml
+gather_facts: true
+```
+
+This task is useful for validation and learning because it shows what system Ansible is managing.
+
+---
+
+### Update apt package cache
+
+```yaml
+ansible.builtin.apt:
+  update_cache: true
+  cache_valid_time: "{{ linux_baseline_apt_cache_valid_time }}"
+```
+
+This updates the APT package cache.
+
+The cache validity time is controlled by a variable:
+
+```yaml
+linux_baseline_apt_cache_valid_time
+```
+
+This prevents unnecessary repeated cache updates.
+
+---
+
+### Install baseline packages
+
+```yaml
+ansible.builtin.apt:
+  name: "{{ linux_baseline_packages }}"
+  state: present
+```
+
+This installs the baseline package list.
+
+`state: present` means:
+
+```text
+If the package is missing, install it.
+If the package is already installed, do nothing.
+```
+
+This is idempotent behavior.
+
+---
+
+### Ensure SSH service is enabled and running
+
+```yaml
+ansible.builtin.service:
+  name: "{{ linux_baseline_ssh_service_name }}"
+  state: started
+  enabled: true
+```
+
+This ensures that SSH is running now and will start after reboot.
+
+SSH is required because Ansible connects to Linux managed nodes over SSH.
+
+---
+
+### Validate hostname command
+
+```yaml
+ansible.builtin.command: hostname
+register: linux_baseline_hostname_result
+changed_when: false
+```
+
+This runs the `hostname` command on the managed node.
+
+The result is stored in:
+
+```yaml
+linux_baseline_hostname_result
+```
+
+`changed_when: false` is used because the command only reads information and does not modify the system.
+
+---
+
+## 7. Role Defaults
 
 File:
 
@@ -177,7 +268,7 @@ Content:
 # Default variables for the linux_baseline role.
 # These values can be overridden by inventory group_vars or host_vars.
 
-baseline_packages:
+linux_baseline_packages:
   - curl
   - wget
   - vim
@@ -190,18 +281,22 @@ baseline_packages:
   - python3-pip
   - openssh-server
 
-ssh_service_name: ssh
+linux_baseline_ssh_service_name: ssh
 
-apt_cache_valid_time: 3600
+linux_baseline_apt_cache_valid_time: 3600
 ```
 
 Role defaults provide fallback values.
 
-They are useful because the role can still work even if inventory variables are missing.
+These values can be overridden by inventory variables, for example:
+
+```text
+ansible/inventories/dev/group_vars/linux.yml
+```
 
 ---
 
-## 7. Variable Precedence
+## 8. Variable Precedence
 
 Ansible variables have precedence.
 
@@ -227,7 +322,7 @@ This is useful because the role has safe defaults, while each environment can st
 
 ---
 
-## 8. Role Handler
+## 9. Role Handler
 
 File:
 
@@ -241,15 +336,15 @@ Content:
 ---
 - name: Restart SSH service
   ansible.builtin.service:
-    name: "{{ ssh_service_name }}"
+    name: "{{ linux_baseline_ssh_service_name }}"
     state: restarted
 ```
 
-The handler is not actively used yet.
+The handler is prepared for future stages where SSH configuration may be managed by Ansible.
 
-It is prepared for future stages where SSH configuration may be managed by Ansible.
+A handler runs only when it is notified by a changed task.
 
-Example future use:
+Example future usage:
 
 ```yaml
 notify: Restart SSH service
@@ -257,7 +352,7 @@ notify: Restart SSH service
 
 ---
 
-## 9. Role Metadata
+## 10. Role Metadata
 
 File:
 
@@ -298,15 +393,15 @@ It also makes the role structure closer to standard Ansible role conventions.
 
 ---
 
-## 10. Role-Based Playbook
+## 11. Role-Based Playbook
 
-A new playbook was created:
+A role-based playbook was created:
 
 ```text
 ansible/playbooks/02-apply-linux-baseline.yml
 ```
 
-Content:
+Content at this stage:
 
 ```yaml
 ---
@@ -321,19 +416,19 @@ Content:
 
 This playbook is intentionally short.
 
-It delegates actual configuration logic to the role.
+It delegates the actual configuration logic to the role.
 
 ---
 
-## 11. Why This Playbook Is Cleaner
+## 12. Why This Playbook Is Cleaner
 
-Previous playbook style:
+Previous style:
 
 ```text
 playbook contains all tasks directly
 ```
 
-New playbook style:
+New style:
 
 ```text
 playbook selects hosts and applies roles
@@ -345,7 +440,7 @@ The role contains reusable implementation details.
 
 ---
 
-## 12. Validation Commands
+## 13. Validation Commands
 
 Run from the Ansible directory:
 
@@ -394,7 +489,7 @@ or fewer changes than the first run.
 
 ---
 
-## 13. Post-Run Validation
+## 14. Post-Run Validation
 
 Check package installation:
 
@@ -434,11 +529,11 @@ active
 
 ---
 
-## 14. Important Concept: Reusability
+## 15. Important Concept: Reusability
 
 The role can later be applied to more hosts.
 
-Currently:
+At first, the playbook targeted:
 
 ```yaml
 hosts: web-01
@@ -450,7 +545,7 @@ Later, after all Linux VMs exist, the same role can be applied to:
 hosts: linux
 ```
 
-That will apply the baseline configuration to:
+That applies the baseline configuration to:
 
 ```text
 web-01
@@ -463,9 +558,9 @@ This is the main value of roles: one implementation, many targets.
 
 ---
 
-## 15. Important Concept: Maintainability
+## 16. Important Concept: Maintainability
 
-Without roles, a project can become messy:
+Without roles, an Ansible project can become messy:
 
 ```text
 large playbooks
@@ -480,6 +575,7 @@ With roles, the structure becomes clearer:
 roles/linux_baseline/tasks/main.yml
 roles/linux_baseline/defaults/main.yml
 roles/linux_baseline/handlers/main.yml
+roles/linux_baseline/meta/main.yml
 ```
 
 Each part has a clear responsibility.
@@ -488,7 +584,7 @@ This is a major step from beginner Ansible toward production-style Ansible.
 
 ---
 
-## 16. Troubleshooting
+## 17. Troubleshooting
 
 ### Role Not Found
 
@@ -536,7 +632,7 @@ roles_path = roles
 Error example:
 
 ```text
-'baseline_packages' is undefined
+'linux_baseline_packages' is undefined
 ```
 
 Possible causes:
@@ -558,25 +654,25 @@ ansible-inventory --host web-01
 
 ### Playbook Targets Non-Existing Hosts
 
-Currently only `web-01` exists.
+At this stage, only `web-01` existed.
 
-Because of this, the role-based playbook targets:
+Because of this, the role-based playbook originally targeted:
 
 ```yaml
 hosts: web-01
 ```
 
-Do not change it to:
+It should only be changed to:
 
 ```yaml
 hosts: linux
 ```
 
-until all planned VMs are created.
+after all planned Linux VMs are created.
 
 ---
 
-## 17. Commands Used in This Stage
+## 18. Commands Used in This Stage
 
 Create role directories:
 
@@ -623,59 +719,49 @@ ansible-playbook playbooks/02-apply-linux-baseline.yml
 
 ---
 
-## 18. Recommended Screenshots
+## 19. Validation Evidence
 
-Screenshots for this stage can be stored in:
-
-```text
-docs/screenshots/stage-01-ansible-basics/
-```
-
-Recommended screenshots:
-
-| Screenshot | Description |
-|---|---|
-| `09-linux-baseline-role-tree.png` | Role directory structure |
-| `10-role-playbook-syntax-check.png` | Successful syntax check |
-| `11-role-playbook-run.png` | Role-based playbook execution |
-| `12-role-idempotency-check.png` | Second run showing idempotency |
-
-Example markdown links:
-
-```markdown
-![Linux baseline role structure](../screenshots/stage-01-ansible-basics/09-linux-baseline-role-tree.png)
-
-![Role playbook syntax check](../screenshots/stage-01-ansible-basics/10-role-playbook-syntax-check.png)
-
-![Role playbook run](../screenshots/stage-01-ansible-basics/11-role-playbook-run.png)
-
-![Role idempotency check](../screenshots/stage-01-ansible-basics/12-role-idempotency-check.png)
-```
-
-Screenshots are optional but useful as GitHub evidence.
----
-
-## Validation Screenshots
+The following screenshots provide evidence that the first reusable Ansible role was created, validated and executed successfully.
 
 ### Linux Baseline Role Structure
+
+The screenshot shows the final structure of the `linux_baseline` role, including `defaults`, `handlers`, `meta` and `tasks`.
 
 ![Linux baseline role structure](../screenshots/stage-01-ansible-basics/01-linux-baseline-role-tree.png)
 
 ### Linux Baseline Role Idempotency
 
+The screenshot shows a repeated execution of the role-based baseline playbook.
+
+The result confirms that the playbook completed successfully with:
+
+```text
+failed=0
+unreachable=0
+changed=0
+```
+
 ![Linux baseline idempotency](../screenshots/stage-01-ansible-basics/02-linux-baseline-idempotency.png)
 
 ### Lint Validation
 
+The screenshot shows successful YAML and Ansible lint validation.
+
+This confirms that the Ansible structure follows the current linting rules used in the project.
+
 ![Ansible and YAML lint validation](../screenshots/stage-01-ansible-basics/03-ansible-lint-yamllint-passed.png)
 
-### GitHub Actions Passing
+### GitHub Actions Validation
+
+The screenshot shows the GitHub Actions validation workflow passing successfully.
+
+This confirms that the repository is automatically validated after changes are pushed.
 
 ![GitHub Actions passing](../screenshots/stage-01-ansible-basics/04-github-actions-passing.png)
 
 ---
 
-## 19. Stage Result
+## 20. Stage Result
 
 At the end of this stage, the project has:
 
@@ -693,7 +779,7 @@ Idempotency validated
 
 ---
 
-## 20. Current Status
+## 21. Current Status
 
 Current project status:
 
@@ -707,4 +793,4 @@ Next planned stage:
 Stage 1.4 - Ansible linting and code quality
 ```
 
-The next stage will introduce basic Ansible code quality checks using `ansible-lint` and `yamllint`.
+The next stage introduces basic Ansible code quality checks using `ansible-lint` and `yamllint`.

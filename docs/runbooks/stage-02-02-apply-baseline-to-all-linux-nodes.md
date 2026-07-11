@@ -461,40 +461,47 @@ This allows Ansible to auto-detect Python.
 
 ---
 
-## 14. Recommended Screenshots
+## 14. Validation Evidence
 
-Screenshots for this stage can be stored in:
-
-```text
-docs/screenshots/stage-02-multi-node-automation/
-```
-
-Recommended screenshots:
-
-| Screenshot | Description |
-|---|---|
-| `01-ansible-linux-ping-all-nodes.png` | `ansible linux -m ping` returns pong for all nodes |
-| `02-baseline-role-all-nodes-run.png` | Role applied to all Linux nodes |
-| `03-baseline-role-idempotency.png` | Second run showing idempotent result |
-| `04-post-run-validation.png` | `htop` and SSH service validation |
-
----
-
-## Validation Screenshots
+The following screenshots provide evidence that the Linux baseline role was successfully applied across all managed Linux nodes.
 
 ### Ansible Ping for All Linux Nodes
+
+The screenshot shows that all managed Linux nodes respond successfully to Ansible ping.
+
+Validated nodes:
+
+```text
+web-01
+web-02
+db-01
+monitor-01
+```
 
 ![Ansible ping all Linux nodes](../screenshots/stage-02-multi-node-automation/01-ansible-linux-ping-all-nodes.png)
 
 ### Baseline Role Idempotency on All Nodes
 
+The screenshot shows a repeated execution of the `linux_baseline` role against the full `linux` group.
+
+The result confirms that all nodes completed successfully with:
+
+```text
+failed=0
+unreachable=0
+changed=0
+```
+
 ![Baseline role all nodes idempotency](../screenshots/stage-02-multi-node-automation/02-baseline-role-all-nodes-idempotency.png)
 
 ### Baseline Post-Run Validation
 
+The screenshot shows post-run validation commands confirming that baseline tools and SSH service state are present on all managed Linux nodes.
+
 ![Baseline post-run validation](../screenshots/stage-02-multi-node-automation/03-baseline-post-run-validation.png)
 
 ---
+
 ## 15. Stage Result
 
 At the end of this stage:
@@ -525,4 +532,4 @@ Next planned stage:
 Stage 2.3 - Create Nginx role for web servers
 ```
 
-The next stage will introduce a dedicated `nginx` role and apply it only to the `web` group.
+The next stage introduces a dedicated `nginx` role and applies it only to the `web` group.

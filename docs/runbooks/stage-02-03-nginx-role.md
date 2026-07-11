@@ -197,7 +197,7 @@ nginx_web_root: /var/www/html
 
 This is the default web root directory used by Nginx on Ubuntu.
 
-The custom index page will be deployed into this directory.
+The custom index page is deployed into this directory.
 
 ---
 
@@ -321,7 +321,8 @@ state: restarted
 
 This restarts the service when the handler is triggered.
 
-The handler does not run on every playbook execution.  
+The handler does not run on every playbook execution.
+
 It runs only if a task that notifies it reports a change.
 
 This helps keep the role idempotent.
@@ -953,42 +954,57 @@ Current validation includes:
 - `ansible-lint`
 - Ansible syntax checks
 
-The workflow should be updated to include the new playbook:
+The workflow includes syntax validation for:
 
 ```text
 ansible/playbooks/03-deploy-nginx.yml
 ```
 
-Recommended additional workflow step:
-
-```yaml
-- name: Syntax check nginx deployment playbook
-  run: ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
-```
-
 ---
 
-## 21. Recommended Screenshots
+## 21. Validation Evidence
 
-Screenshots for this stage can be stored in:
+The following screenshots provide evidence that the Nginx role was created, executed and validated successfully.
+
+### Nginx Role Structure
+
+The screenshot shows the final Nginx role structure, including `defaults`, `handlers`, `meta`, `tasks` and `templates`.
+
+![Nginx role structure](../screenshots/stage-02-nginx-role/01-nginx-role-tree.png)
+
+### Nginx Role Idempotency
+
+The screenshot shows a repeated execution of the Nginx deployment playbook.
+
+The result confirms that both web servers completed successfully with:
 
 ```text
-docs/screenshots/stage-02-nginx-role/
+failed=0
+unreachable=0
+changed=0
 ```
 
-Recommended screenshot names:
+![Nginx idempotency run](../screenshots/stage-02-nginx-role/02-nginx-idempotency-run.png)
 
-| Screenshot | Description |
-|---|---|
-| `01-nginx-role-tree.png` | Role directory structure |
-| `02-nginx-syntax-check.png` | Syntax check for Nginx playbook |
-| `03-nginx-idempotency-run.png` | Repeated playbook run with `changed=0` |
-| `04-nginx-curl-validation.png` | Curl validation from Kali WSL |
-| `05-nginx-ansible-lint.png` | Successful ansible-lint result |
+### Nginx Curl Validation
 
-A first-run screenshot is not required.
+The screenshot shows HTTP validation from Kali WSL using `curl`.
 
-The idempotency screenshot is more valuable because it proves that the role does not keep changing the system after the desired state is already applied.
+Both web servers return the Ansible-managed page containing:
+
+```text
+Enterprise Automation Lab
+```
+
+![Nginx curl validation](../screenshots/stage-02-nginx-role/03-nginx-curl-validation.png)
+
+### Nginx Browser Validation
+
+The screenshot shows the Ansible-managed Nginx page opened in a browser.
+
+This confirms that the web service is reachable from the Windows host and serves the generated HTML page correctly.
+
+![Nginx browser validation](../screenshots/stage-02-nginx-role/04-nginx-browser-validation.png)
 
 ---
 
@@ -1065,25 +1081,6 @@ Common issues:
 
 ---
 
-## Validation Screenshots
-
-### Nginx Role Structure
-
-![Nginx role structure](../screenshots/stage-02-nginx-role/01-nginx-role-tree.png)
-
-### Nginx Role Idempotency
-
-![Nginx idempotency run](../screenshots/stage-02-nginx-role/02-nginx-idempotency-run.png)
-
-### Nginx Curl Validation
-
-![Nginx curl validation](../screenshots/stage-02-nginx-role/03-nginx-curl-validation.png)
-
-### Nginx Browser Validation
-
-![Nginx browser validation](../screenshots/stage-02-nginx-role/04-nginx-browser-validation.png)
-
----
 ## 23. Stage Result
 
 At the end of this stage:
@@ -1116,7 +1113,7 @@ Next planned stage:
 Stage 2.4 - Update GitHub Actions and README for Nginx stage
 ```
 
-The next stage should update:
+The next stage updates:
 
 - GitHub Actions syntax checks
 - README project status
