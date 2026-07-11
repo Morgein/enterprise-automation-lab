@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enterprise Automation Lab</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f6f8;
+      color: #222;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 760px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    h1 {
+      color: #1f4e79;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    td {
+      border-bottom: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    td:first-child {
+      font-weight: bold;
+      width: 220px;
+    }
+
+    .status {
+      color: #128a36;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Enterprise Automation Lab</h1>
+    <p class="status">Nginx is running and managed by {{ nginx_managed_by }}.</p>
+
+    <table>
+      <tr>
+        <td>Inventory Hostname</td>
+        <td>{{ inventory_hostname }}</td>
+      </tr>
+      <tr>
+        <td>System Hostname</td>
+        <td>{{ ansible_facts['hostname'] }}</td>
+      </tr>
+      <tr>
+        <td>Distribution</td>
+        <td>{{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}</td>
+      </tr>
+      <tr>
+        <td>Kernel</td>
+        <td>{{ ansible_facts['kernel'] }}</td>
+      </tr>
+      <tr>
+        <td>Architecture</td>
+        <td>{{ ansible_facts['architecture'] }}</td>
+      </tr>
+      <tr>
+        <td>Environment</td>
+        <td>{{ nginx_environment_name }}</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

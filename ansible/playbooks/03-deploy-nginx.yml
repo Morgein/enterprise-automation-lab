@@ -1,0 +1,9 @@
+---
+
+- name: Deploy nginx web servers
+  hosts: web
+  become: true
+  gather_facts: true
+
+  roles:
+    - nginx

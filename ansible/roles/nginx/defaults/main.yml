@@ -1,0 +1,16 @@
+---
+
+# Default variables for the nginx role.
+# These values can be overriden by inventory group_vars or host_vars.
+
+nginx_package_name: nginx
+
+nginx_service_name: nginx
+
+nginx_web_root: /var/www/html
+
+nginx_index_file: index.html
+
+nginx_environment_name: dev
+
+nginx_managed_by: Ansible
