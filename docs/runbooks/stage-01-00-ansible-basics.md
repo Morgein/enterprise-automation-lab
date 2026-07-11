@@ -970,42 +970,6 @@ ansible web-01 -m command -a "systemctl is-active ssh"
 
 ---
 
-## 17. Validation Evidence
-
-The following screenshots provide evidence that the first reusable Ansible role was created, validated and executed successfully.
-
-### Linux Baseline Role Structure
-
-The screenshot shows the final structure of the `linux_baseline` role, including `defaults`, `handlers`, `meta` and `tasks`.
-
-![Linux baseline role structure](../screenshots/stage-01-ansible-basics/01-linux-baseline-role-tree.png)
-
-### Linux Baseline Role Idempotency
-
-The screenshot shows a repeated execution of the role-based baseline playbook.  
-The result confirms that the playbook completed successfully with `failed=0`, `unreachable=0` and no unnecessary changes.
-
-![Linux baseline idempotency](../screenshots/stage-01-ansible-basics/02-linux-baseline-idempotency.png)
-
-### Lint Validation
-
-The screenshot shows successful YAML and Ansible lint validation.  
-This confirms that the Ansible structure follows the current linting rules used in the project.
-
-![Ansible and YAML lint validation](../screenshots/stage-01-ansible-basics/03-ansible-lint-yamllint-passed.png)
-
-### GitHub Actions Validation
-
-The screenshot shows the GitHub Actions validation workflow passing successfully.  
-This confirms that the repository is automatically validated after changes are pushed.
-
-![GitHub Actions passing](../screenshots/stage-01-ansible-basics/04-github-actions-passing.png)
-
-```
-
-Screenshots are optional but recommended for GitHub evidence.
-
----
 
 ## 18. Stage Result
 
