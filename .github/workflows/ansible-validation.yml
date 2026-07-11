@@ -18,9 +18,8 @@ jobs:
     name: Validate Ansible Code
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ansible
+    env:
+      ANSIBLE_COLLECTIONS_PATH: ./collections
 
     steps:
       - name: Checkout repository
@@ -36,6 +35,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible ansible-lint yamllint
 
+      - name: Install Ansible collections
+        working-directory: ansible
+        run: ansible-galaxy collection install -r requirements.yml -p ./collections --force
+
       - name: Show tool versions
         run: |
           python --version
@@ -44,17 +47,24 @@ jobs:
           yamllint --version
 
       - name: Run yamllint
-        working-directory: .
         run: yamllint .
 
       - name: Run ansible-lint
+        working-directory: ansible
         run: ansible-lint .
 
       - name: Syntax check bootstrap playbook
+        working-directory: ansible
         run: ansible-playbook playbooks/01-bootstrap-linux.yml --syntax-check
 
       - name: Syntax check Linux baseline playbook
+        working-directory: ansible
         run: ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
 
       - name: Syntax check Nginx deployment playbook
+        working-directory: ansible
         run: ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
+
+      - name: Syntax check PostgreSQL deployment playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check

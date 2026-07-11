@@ -1,0 +1,9 @@
+---
+- name: Deploy PostgresSQL database server
+  hosts: database
+  become: true
+  gather_facts: true
+
+
+  roles:
+    - postgresql

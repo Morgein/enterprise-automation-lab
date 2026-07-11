@@ -31,6 +31,8 @@ ignore: |
   .venv/
   venv/
   ansible/.venv/
+  ansible/collections
+  collections/
   terraform/.terraform/
   *.md
   README.md

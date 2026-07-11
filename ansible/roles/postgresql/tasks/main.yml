@@ -1,0 +1,42 @@
+---
+- name: Install PostgreSQL packages
+  ansible.builtin.apt:
+    name: "{{ postgresql_packages }}"
+    state: present
+    update_cache: true
+
+- name: Ensure PostgreSQL service is enabled and running
+  ansible.builtin.service:
+    name: "{{ postgresql_service_name }}"
+    state: started
+    enabled: true
+
+- name: Create PostgreSQL databases
+  community.postgresql.postgresql_db:
+    name: "{{ item }}"
+    state: present
+  become: true
+  become_user: postgres
+  loop: "{{ postgresql_databases }}"
+
+- name: Validate PostgreSQL version
+  ansible.builtin.command: psql --version
+  register: postgresql_version_result
+  changed_when: false
+
+- name: Show PostgreSQL version
+  ansible.builtin.debug:
+    var: postgresql_version_result.stdout
+
+- name: Validate PostgreSQL databases
+  community.postgresql.postgresql_query:
+    login_db: postgres
+    query: "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname;"
+  become: true
+  become_user: postgres
+  register: postgresql_database_query_result
+  changed_when: false
+
+- name: Show PostgreSQL databases
+  ansible.builtin.debug:
+    var: postgresql_database_query_result.query_result

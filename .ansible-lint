@@ -6,6 +6,8 @@ exclude_paths:
   - .venv/
   - venv/
   - ansible/.venv/
+  - ansible/collections/
+  - collections/
   - terraform/.terraform/
 
 warn_list:

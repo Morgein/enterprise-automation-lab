@@ -1,6 +1,6 @@
 # Enterprise Automation Lab
 
-[![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
+[![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
 
 ## Project Overview
 
@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 2.4 - README and CI update after Nginx role
+Stage 2.5 - PostgreSQL role for database server
 ```
 
 Completed stages:
@@ -37,7 +37,8 @@ Completed stages:
 | Stage 2.1 | Additional Hyper-V managed nodes | Completed |
 | Stage 2.2 | Linux baseline role applied to all Linux nodes | Completed |
 | Stage 2.3 | Nginx role for web servers | Completed |
-| Stage 2.4 | README and CI update after Nginx role | In Progress |
+| Stage 2.4 | README and CI update after Nginx role | Completed |
+| Stage 2.5 | PostgreSQL role for database server | Completed |
 
 ---
 
@@ -78,17 +79,22 @@ Kali Linux WSL
 Hyper-V Linux Nodes
     |
     ├── web-01
+    │   ├── Linux baseline
     │   └── Nginx
     │       └── Custom Ansible-managed index.html
     │
     ├── web-02
+    │   ├── Linux baseline
     │   └── Nginx
     │       └── Custom Ansible-managed index.html
     │
     ├── db-01
-    │   └── Database role planned
+    │   ├── Linux baseline
+    │   └── PostgreSQL
+    │       └── automation_lab database
     │
     └── monitor-01
+        ├── Linux baseline
         └── Monitoring role planned
 ```
 
@@ -131,6 +137,8 @@ Node IP plan:
 | Jinja2 Templates | Dynamic file generation |
 | SSH Keys | Secure authentication from control node to managed nodes |
 | Nginx | Web server role deployed to web nodes |
+| PostgreSQL | Database server deployed to `db-01` |
+| community.postgresql | Ansible collection for PostgreSQL automation |
 | yamllint | YAML syntax and formatting validation |
 | ansible-lint | Ansible best-practice validation |
 | GitHub Actions | Automated CI validation |
@@ -146,27 +154,35 @@ enterprise-automation-lab/
 │
 ├── ansible/
 │   ├── ansible.cfg
+│   ├── requirements.yml
 │   ├── inventories/
 │   │   └── dev/
 │   │       ├── hosts.ini
 │   │       └── group_vars/
+│   │           ├── database.yml
 │   │           └── linux.yml
 │   ├── playbooks/
 │   │   ├── 01-bootstrap-linux.yml
 │   │   ├── 02-apply-linux-baseline.yml
-│   │   └── 03-deploy-nginx.yml
+│   │   ├── 03-deploy-nginx.yml
+│   │   └── 04-deploy-postgresql.yml
 │   └── roles/
 │       ├── linux_baseline/
 │       │   ├── defaults/
 │       │   ├── handlers/
 │       │   ├── meta/
 │       │   └── tasks/
-│       └── nginx/
+│       ├── nginx/
+│       │   ├── defaults/
+│       │   ├── handlers/
+│       │   ├── meta/
+│       │   ├── tasks/
+│       │   └── templates/
+│       └── postgresql/
 │           ├── defaults/
 │           ├── handlers/
 │           ├── meta/
-│           ├── tasks/
-│           └── templates/
+│           └── tasks/
 │
 ├── cloudformation/
 │
@@ -227,6 +243,51 @@ ansible_ssh_private_key_file=~/.ssh/enterprise_automation_lab
 The `linux` group contains all managed Linux nodes.
 
 The `web` group is used for Nginx deployment.
+
+The `database` group is used for PostgreSQL deployment.
+
+---
+
+## Ansible Collections
+
+The project uses an Ansible collection for PostgreSQL automation.
+
+Collection requirements are stored in:
+
+```text
+ansible/requirements.yml
+```
+
+Current content:
+
+```yaml
+---
+collections:
+  - name: community.postgresql
+```
+
+The collection is installed locally with:
+
+```bash
+cd ansible
+ansible-galaxy collection install -r requirements.yml -p ./collections --force
+```
+
+Downloaded collections are not committed to the repository.
+
+The project commits the dependency definition file:
+
+```text
+ansible/requirements.yml
+```
+
+but ignores:
+
+```text
+ansible/collections/
+```
+
+This keeps the repository clean and reproducible.
 
 ---
 
@@ -292,6 +353,43 @@ web
 
 ---
 
+### postgresql
+
+Path:
+
+```text
+ansible/roles/postgresql/
+```
+
+Purpose:
+
+```text
+Deploy and validate PostgreSQL on the database server.
+```
+
+The role performs:
+
+- PostgreSQL package installation
+- PostgreSQL service enablement
+- PostgreSQL service running-state validation
+- `automation_lab` database creation
+- PostgreSQL version validation
+- PostgreSQL database query validation
+
+Target group:
+
+```text
+database
+```
+
+Current database created by the role:
+
+```text
+automation_lab
+```
+
+---
+
 ## Playbooks
 
 | Playbook | Purpose |
@@ -299,6 +397,7 @@ web
 | `ansible/playbooks/01-bootstrap-linux.yml` | Initial bootstrap playbook |
 | `ansible/playbooks/02-apply-linux-baseline.yml` | Apply Linux baseline role |
 | `ansible/playbooks/03-deploy-nginx.yml` | Deploy Nginx to web servers |
+| `ansible/playbooks/04-deploy-postgresql.yml` | Deploy PostgreSQL to database server |
 
 ---
 
@@ -306,7 +405,7 @@ web
 
 The project includes local and automated validation.
 
-### Local Validation
+### Local Static Validation
 
 Run from the repository root:
 
@@ -322,7 +421,10 @@ ansible-lint .
 ansible-playbook playbooks/01-bootstrap-linux.yml --syntax-check
 ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
 ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
+ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
 ```
+
+---
 
 ### Runtime Validation
 
@@ -345,11 +447,30 @@ Deploy Nginx:
 ansible-playbook playbooks/03-deploy-nginx.yml
 ```
 
-Validate HTTP response from Kali WSL:
+Deploy PostgreSQL:
+
+```bash
+ansible-playbook playbooks/04-deploy-postgresql.yml
+```
+
+Validate Nginx HTTP response from Kali WSL:
 
 ```bash
 curl -s http://192.168.100.11 | grep "Enterprise Automation Lab"
 curl -s http://192.168.100.12 | grep "Enterprise Automation Lab"
+```
+
+Validate PostgreSQL service:
+
+```bash
+ansible database -m command -a "systemctl is-active postgresql"
+ansible database -m command -a "systemctl is-enabled postgresql"
+```
+
+Validate PostgreSQL database:
+
+```bash
+ansible database -m command -a "sudo -u postgres psql -tAc \"SELECT datname FROM pg_database WHERE datname='automation_lab';\""
 ```
 
 ---
@@ -373,6 +494,7 @@ The workflow validates:
 - YAML formatting with `yamllint`
 - Ansible best practices with `ansible-lint`
 - syntax of all current Ansible playbooks
+- required Ansible collection installation from `requirements.yml`
 
 Current playbooks checked by CI:
 
@@ -380,6 +502,7 @@ Current playbooks checked by CI:
 01-bootstrap-linux.yml
 02-apply-linux-baseline.yml
 03-deploy-nginx.yml
+04-deploy-postgresql.yml
 ```
 
 ---
@@ -396,9 +519,13 @@ Linux baseline idempotency:       changed=0
 Nginx role:                       successful
 Nginx idempotency:                changed=0
 Nginx HTTP response:              successful
+PostgreSQL role:                  successful
+PostgreSQL idempotency:           changed=0
+PostgreSQL service state:         active and enabled
+PostgreSQL database validation:   automation_lab exists
 yamllint:                         successful
 ansible-lint:                     successful
-GitHub Actions:                   successful
+GitHub Actions:                   successful after workflow validation
 ```
 
 ---
@@ -421,6 +548,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-01-create-additional-managed-nodes.md` | Additional VM creation |
 | `docs/runbooks/stage-02-02-apply-baseline-to-all-linux-nodes.md` | Baseline role applied to all nodes |
 | `docs/runbooks/stage-02-03-nginx-role.md` | Nginx role for web servers |
+| `docs/runbooks/stage-02-05-postgresql-role.md` | PostgreSQL role for database server |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -440,6 +568,7 @@ docs/screenshots/stage-00-foundation/
 docs/screenshots/stage-01-ansible-basics/
 docs/screenshots/stage-02-multi-node-automation/
 docs/screenshots/stage-02-nginx-role/
+docs/screenshots/stage-02-postgresql-role/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -452,9 +581,9 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 2.5 | PostgreSQL role for `db-01` |
 | Stage 2.6 | Monitoring role for `monitor-01` |
 | Stage 2.7 | Nginx reverse proxy or simple load balancing |
+| Stage 2.8 | PostgreSQL network access and application-style validation |
 | Stage 3 | Advanced Ansible: templates, handlers, Vault, tags |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
@@ -474,11 +603,13 @@ This project demonstrates practical experience with:
 - Ansible ad-hoc commands
 - Ansible playbooks
 - Ansible roles
+- Ansible collections
 - group_vars and variable separation
 - Jinja2 templates
 - idempotent automation
 - multi-node automation
 - service-specific role design
+- PostgreSQL automation
 - YAML linting
 - Ansible linting
 - GitHub Actions CI validation
@@ -494,5 +625,6 @@ The project has completed the first multi-node automation phase.
 The lab can manage all Linux nodes through Ansible using SSH key authentication.
 The Linux baseline role is applied to all nodes.
 The Nginx role is applied to web servers.
+The PostgreSQL role is applied to the database server.
 The project passes local linting and GitHub Actions validation.
 ```

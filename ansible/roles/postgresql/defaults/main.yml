@@ -1,0 +1,14 @@
+---
+# Default variables for the postgresql role.
+# These values can be overridden by inventory group_vars or host_vars.
+
+postgresql_packages:
+  - acl
+  - postgresql
+  - postgresql-contrib
+  - python3-psycopg2
+
+postgresql_service_name: postgresql
+
+postgresql_databases:
+  - automation_lab
