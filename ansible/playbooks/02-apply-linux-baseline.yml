@@ -1,6 +1,6 @@
 ---
 - name: Apply Linux baseline configuration
-  hosts: web-01
+  hosts: linux
   become: true
   gather_facts: true
 
