@@ -653,6 +653,25 @@ Example markdown links:
 ```
 
 Screenshots are optional but useful as GitHub evidence.
+---
+
+## Validation Screenshots
+
+### Linux Baseline Role Structure
+
+![Linux baseline role structure](../screenshots/stage-01-ansible-basics/01-linux-baseline-role-tree.png)
+
+### Linux Baseline Role Idempotency
+
+![Linux baseline idempotency](../screenshots/stage-01-ansible-basics/02-linux-baseline-idempotency.png)
+
+### Lint Validation
+
+![Ansible and YAML lint validation](../screenshots/stage-01-ansible-basics/03-ansible-lint-yamllint-passed.png)
+
+### GitHub Actions Passing
+
+![GitHub Actions passing](../screenshots/stage-01-ansible-basics/04-github-actions-passing.png)
 
 ---
 

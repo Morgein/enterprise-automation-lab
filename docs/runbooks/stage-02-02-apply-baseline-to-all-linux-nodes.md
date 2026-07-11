@@ -480,6 +480,21 @@ Recommended screenshots:
 
 ---
 
+## Validation Screenshots
+
+### Ansible Ping for All Linux Nodes
+
+![Ansible ping all Linux nodes](../screenshots/stage-02-multi-node-automation/01-ansible-linux-ping-all-nodes.png)
+
+### Baseline Role Idempotency on All Nodes
+
+![Baseline role all nodes idempotency](../screenshots/stage-02-multi-node-automation/02-baseline-role-all-nodes-idempotency.png)
+
+### Baseline Post-Run Validation
+
+![Baseline post-run validation](../screenshots/stage-02-multi-node-automation/03-baseline-post-run-validation.png)
+
+---
 ## 15. Stage Result
 
 At the end of this stage:

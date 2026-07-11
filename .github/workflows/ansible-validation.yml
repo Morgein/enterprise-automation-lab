@@ -55,3 +55,6 @@ jobs:
 
       - name: Syntax check role-based baseline playbook
         run: ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
+
+      - name: Syntax check nginx deployment playbook
+        run: ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
