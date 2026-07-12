@@ -1,0 +1,44 @@
+---
+# Default variables for the prometheus role.
+# These values can be overridden by inventory group_vars or host_vars.
+
+prometheus_version: "2.55.1"
+
+prometheus_arch: linux-amd64
+
+prometheus_package_name: "prometheus-{{ prometheus_version }}.{{ prometheus_arch }}"
+
+prometheus_user: prometheus
+
+prometheus_group: prometheus
+
+prometheus_install_dir: /usr/local/bin
+
+prometheus_binary_path: "{{ prometheus_install_dir }}/prometheus"
+
+prometheus_promtool_binary_path: "{{ prometheus_install_dir }}/promtool"
+
+prometheus_config_dir: /etc/prometheus
+
+prometheus_config_file: "{{ prometheus_config_dir }}/prometheus.yml"
+
+prometheus_data_dir: /var/lib/prometheus
+
+prometheus_download_url: >-
+  https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/{{ prometheus_package_name }}.tar.gz
+
+prometheus_archive_path: "/tmp/{{ prometheus_package_name }}.tar.gz"
+
+prometheus_extract_path: "/tmp/{{ prometheus_package_name }}"
+
+prometheus_service_name: prometheus
+
+prometheus_web_listen_address: "0.0.0.0:9090"
+
+prometheus_self_scrape_target: "127.0.0.1:9090"
+
+prometheus_scrape_interval: 15s
+
+prometheus_evaluation_interval: 15s
+
+prometheus_node_exporter_targets: []
