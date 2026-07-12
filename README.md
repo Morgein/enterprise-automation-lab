@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 2.8 - Grafana role
+Stage 2.9 - Grafana dashboard provisioning
 ```
 
 Completed stages:
@@ -42,6 +42,7 @@ Completed stages:
 | Stage 2.6 | Prometheus Node Exporter role for Linux metrics | Completed |
 | Stage 2.7 | Prometheus server role for metrics collection | Completed |
 | Stage 2.8 | Grafana role for metrics visualization | Completed |
+| Stage 2.9 | Grafana dashboard provisioning | Completed |
 
 ---
 
@@ -113,7 +114,8 @@ Hyper-V Linux Nodes
         └── Grafana
             ├── Web UI: http://192.168.100.31:3000
             ├── Health API: http://192.168.100.31:3000/api/health
-            └── Prometheus data source provisioned automatically
+            ├── Prometheus data source provisioned automatically
+            └── Enterprise Linux Overview dashboard provisioned automatically
 ```
 
 ---
@@ -126,6 +128,7 @@ The monitoring stack currently contains:
 Node Exporter
 Prometheus
 Grafana
+Provisioned Grafana Dashboard
 ```
 
 Node Exporter runs on every Linux node and exposes Linux system metrics on port `9100`.
@@ -133,6 +136,8 @@ Node Exporter runs on every Linux node and exposes Linux system metrics on port 
 Prometheus runs on `monitor-01` and collects metrics from all Node Exporter endpoints.
 
 Grafana runs on `monitor-01` and visualizes metrics from Prometheus.
+
+The Grafana dashboard is provisioned automatically through Ansible.
 
 ```text
 web-01:9100
@@ -147,6 +152,9 @@ Prometheus Server
         v
 monitor-01:3000
 Grafana
+        |
+        v
+Enterprise Linux Overview Dashboard
 ```
 
 Current Node Exporter targets:
@@ -170,6 +178,12 @@ Grafana endpoint:
 |---|---|---:|---|
 | Grafana | `monitor-01` | `192.168.100.31` | `http://192.168.100.31:3000` |
 
+Provisioned Grafana dashboard:
+
+| Folder | Dashboard | Purpose |
+|---|---|---|
+| `Enterprise Automation Lab` | `Enterprise Linux Overview` | Linux infrastructure metrics overview |
+
 Prometheus scrape jobs currently configured:
 
 ```text
@@ -183,13 +197,22 @@ The `node_exporter` job scrapes Linux metrics from all managed Linux nodes.
 
 Grafana uses Prometheus as a provisioned data source.
 
-Future monitoring stages can add:
+Grafana dashboard provisioning currently deploys:
 
 ```text
-Grafana dashboard provisioning
-prebuilt Linux system dashboards
-alerting rules
-Prometheus recording rules
+/etc/grafana/provisioning/dashboards/linux-overview.yml
+/var/lib/grafana/dashboards/linux-overview.json
+```
+
+Current provisioned dashboard panels:
+
+```text
+Node Exporter Targets UP
+CPU Usage by Instance
+Memory Available by Instance
+Root Filesystem Free Space
+System Load 1m
+Network Receive Traffic
 ```
 
 ---
@@ -237,7 +260,8 @@ Node IP plan:
 | Prometheus | Metrics collection and time-series monitoring server |
 | promtool | Prometheus configuration validation |
 | Grafana | Metrics visualization and dashboards |
-| Grafana provisioning | Automated data source configuration |
+| Grafana provisioning | Automated data source and dashboard configuration |
+| PromQL | Metrics query language used by Prometheus and Grafana panels |
 | systemd | Service management on Linux nodes |
 | yamllint | YAML syntax and formatting validation |
 | ansible-lint | Ansible best-practice validation |
@@ -305,6 +329,9 @@ enterprise-automation-lab/
 │           ├── meta/
 │           ├── tasks/
 │           └── templates/
+│               ├── dashboard-provider.yml.j2
+│               ├── linux-overview-dashboard.json.j2
+│               └── prometheus-datasource.yml.j2
 │
 ├── cloudformation/
 │
@@ -620,7 +647,7 @@ ansible/roles/grafana/
 Purpose:
 
 ```text
-Deploy Grafana on the monitoring node and provision Prometheus as a data source.
+Deploy Grafana on the monitoring node, provision Prometheus as a data source and provision Linux monitoring dashboards.
 ```
 
 The role performs:
@@ -630,6 +657,8 @@ The role performs:
 - Grafana APT repository configuration
 - Grafana package installation
 - Prometheus data source provisioning
+- Grafana dashboard provider provisioning
+- Linux overview dashboard provisioning
 - Grafana service enablement and startup
 - Grafana TCP port readiness wait
 - Grafana health endpoint validation
@@ -653,6 +682,24 @@ Prometheus data source is provisioned through:
 /etc/grafana/provisioning/datasources/prometheus.yml
 ```
 
+Dashboard provider is provisioned through:
+
+```text
+/etc/grafana/provisioning/dashboards/linux-overview.yml
+```
+
+Dashboard JSON is provisioned through:
+
+```text
+/var/lib/grafana/dashboards/linux-overview.json
+```
+
+Current provisioned dashboard:
+
+```text
+Enterprise Automation Lab / Enterprise Linux Overview
+```
+
 Current Prometheus data source URL:
 
 ```text
@@ -671,7 +718,7 @@ http://127.0.0.1:9090
 | `ansible/playbooks/04-deploy-postgresql.yml` | Deploy PostgreSQL to database server |
 | `ansible/playbooks/05-deploy-node-exporter.yml` | Deploy Prometheus Node Exporter to all Linux nodes |
 | `ansible/playbooks/06-deploy-prometheus.yml` | Deploy Prometheus server to the monitoring node |
-| `ansible/playbooks/07-deploy-grafana.yml` | Deploy Grafana to the monitoring node |
+| `ansible/playbooks/07-deploy-grafana.yml` | Deploy Grafana and provision dashboards on the monitoring node |
 
 ---
 
@@ -742,7 +789,7 @@ Deploy Prometheus:
 ansible-playbook playbooks/06-deploy-prometheus.yml
 ```
 
-Deploy Grafana:
+Deploy Grafana and dashboards:
 
 ```bash
 ansible-playbook playbooks/07-deploy-grafana.yml
@@ -894,6 +941,26 @@ Validate Prometheus data source:
 Connections -> Data sources -> Prometheus
 ```
 
+Validate provisioned dashboard:
+
+```text
+Dashboards -> Enterprise Automation Lab -> Enterprise Linux Overview
+```
+
+Validate dashboard files on `monitor-01`:
+
+```bash
+ansible monitoring -m command -a "ls -la /etc/grafana/provisioning/dashboards"
+ansible monitoring -m command -a "ls -la /var/lib/grafana/dashboards"
+```
+
+Expected files:
+
+```text
+linux-overview.yml
+linux-overview.json
+```
+
 Validate Prometheus query in Grafana:
 
 ```text
@@ -950,34 +1017,36 @@ Current playbooks checked by CI:
 The current local lab validates successfully:
 
 ```text
-Ansible ping to all nodes:          successful
-SSH key login:                      successful
-Linux baseline role:                successful
-Linux baseline idempotency:         changed=0
-Nginx role:                         successful
-Nginx idempotency:                  changed=0
-Nginx HTTP response:                successful
-PostgreSQL role:                    successful
-PostgreSQL idempotency:             changed=0
-PostgreSQL service state:           active and enabled
-PostgreSQL database validation:     automation_lab exists
-Node Exporter role:                 successful
-Node Exporter idempotency:          changed=0
-Node Exporter service state:        active and enabled
-Node Exporter metrics endpoints:    reachable on port 9100
-Prometheus role:                    successful
-Prometheus idempotency:             changed=0
-Prometheus service state:           active and enabled
-Prometheus readiness endpoint:      successful
-Prometheus targets API:             successful
-Grafana role:                       successful
-Grafana idempotency:                changed=0
-Grafana service state:              active and enabled
-Grafana health endpoint:            successful
-Grafana Prometheus data source:     provisioned
-yamllint:                           successful
-ansible-lint:                       successful
-GitHub Actions:                     successful after workflow validation
+Ansible ping to all nodes:              successful
+SSH key login:                          successful
+Linux baseline role:                    successful
+Linux baseline idempotency:             changed=0
+Nginx role:                             successful
+Nginx idempotency:                      changed=0
+Nginx HTTP response:                    successful
+PostgreSQL role:                        successful
+PostgreSQL idempotency:                 changed=0
+PostgreSQL service state:               active and enabled
+PostgreSQL database validation:         automation_lab exists
+Node Exporter role:                     successful
+Node Exporter idempotency:              changed=0
+Node Exporter service state:            active and enabled
+Node Exporter metrics endpoints:        reachable on port 9100
+Prometheus role:                        successful
+Prometheus idempotency:                 changed=0
+Prometheus service state:               active and enabled
+Prometheus readiness endpoint:          successful
+Prometheus targets API:                 successful
+Grafana role:                           successful
+Grafana idempotency:                    changed=0
+Grafana service state:                  active and enabled
+Grafana health endpoint:                successful
+Grafana Prometheus data source:         provisioned
+Grafana dashboard provider:             provisioned
+Enterprise Linux Overview dashboard:    provisioned
+yamllint:                               successful
+ansible-lint:                           successful
+GitHub Actions:                         successful after workflow validation
 ```
 
 ---
@@ -1004,6 +1073,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-06-node-exporter-role.md` | Prometheus Node Exporter role for Linux metrics |
 | `docs/runbooks/stage-02-07-prometheus-role.md` | Prometheus server role for metrics collection |
 | `docs/runbooks/stage-02-08-grafana-role.md` | Grafana role for metrics visualization |
+| `docs/runbooks/stage-02-09-grafana-dashboard-provisioning.md` | Grafana dashboard provisioning |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1027,6 +1097,7 @@ docs/screenshots/stage-02-postgresql-role/
 docs/screenshots/stage-02-node-exporter-role/
 docs/screenshots/stage-02-prometheus-role/
 docs/screenshots/stage-02-grafana-role/
+docs/screenshots/stage-02-grafana-dashboard-provisioning/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1039,8 +1110,7 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 2.9 | Grafana dashboard provisioning |
-| Stage 2.10 | Monitoring validation and dashboard screenshots |
+| Stage 2.10 | Monitoring stack final validation and screenshots |
 | Stage 3 | Advanced Ansible: templates, handlers, Vault, tags |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
@@ -1073,6 +1143,8 @@ This project demonstrates practical experience with:
 - Prometheus configuration validation with promtool
 - Grafana installation automation
 - Grafana data source provisioning
+- Grafana dashboard provisioning
+- PromQL dashboard panels
 - monitoring foundation design
 - YAML linting
 - Ansible linting
@@ -1096,5 +1168,6 @@ The Prometheus role is applied to the monitoring server.
 Prometheus collects metrics from all Node Exporter targets.
 The Grafana role is applied to the monitoring server.
 Grafana is connected to Prometheus through provisioning.
+Grafana automatically loads the Enterprise Linux Overview dashboard.
 The project passes local linting and GitHub Actions validation.
 ```

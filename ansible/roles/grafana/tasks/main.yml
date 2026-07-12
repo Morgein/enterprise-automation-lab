@@ -34,6 +34,22 @@
     group: grafana
     mode: "0755"
 
+- name: Ensure Grafana dashboard provisioning directory exists
+  ansible.builtin.file:
+    path: "{{ grafana_provisioning_dashboards_dir }}"
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+
+- name: Ensure Grafana dashboards directory exists
+  ansible.builtin.file:
+    path: "{{ grafana_dashboards_dir }}"
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+
 - name: Deploy Prometheus datasource provisioning file
   ansible.builtin.template:
     src: prometheus-datasource.yml.j2
@@ -42,6 +58,27 @@
     group: grafana
     mode: "0644"
   notify: Restart grafana
+
+- name: Deploy Grafana dashboard provider file
+  ansible.builtin.template:
+    src: dashboard-provider.yml.j2
+    dest: "{{ grafana_dashboard_provider_file }}"
+    owner: root
+    group: grafana
+    mode: "0644"
+  notify: Restart grafana
+
+- name: Deploy Linux overview dashboard
+  ansible.builtin.template:
+    src: linux-overview-dashboard.json.j2
+    dest: "{{ grafana_linux_overview_dashboard_file }}"
+    owner: root
+    group: grafana
+    mode: "0644"
+  notify: Restart grafana
+
+- name: Flush Grafana handlers before validation
+  ansible.builtin.meta: flush_handlers
 
 - name: Ensure Grafana service is enabled and running
   ansible.builtin.systemd:

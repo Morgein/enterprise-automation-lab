@@ -26,6 +26,20 @@ grafana_prometheus_datasource_name: Prometheus
 
 grafana_prometheus_url: http://127.0.0.1:9090
 
+grafana_provisioning_dashboards_dir: /etc/grafana/provisioning/dashboards
+
+grafana_dashboard_provider_file: "{{ grafana_provisioning_dashboards_dir }}/linux-overview.yml"
+
+grafana_dashboards_dir: /var/lib/grafana/dashboards
+
+grafana_linux_overview_dashboard_file: "{{ grafana_dashboards_dir }}/linux-overview.json"
+
+grafana_dashboard_provider_name: Enterprise Automation Lab
+
+grafana_dashboard_folder_name: Enterprise Automation Lab
+
+grafana_linux_overview_dashboard_title: Enterprise Linux Overview
+
 grafana_http_port: 3000
 
 grafana_health_url: "http://127.0.0.1:{{ grafana_http_port }}/api/health"
