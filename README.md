@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 2.6 - Prometheus Node Exporter role
+Stage 2.7 - Prometheus server role
 ```
 
 Completed stages:
@@ -40,6 +40,7 @@ Completed stages:
 | Stage 2.4 | README and CI update after Nginx role | Completed |
 | Stage 2.5 | PostgreSQL role for database server | Completed |
 | Stage 2.6 | Prometheus Node Exporter role for Linux metrics | Completed |
+| Stage 2.7 | Prometheus server role for metrics collection | Completed |
 
 ---
 
@@ -102,19 +103,41 @@ Hyper-V Linux Nodes
     │
     └── monitor-01
         ├── Linux baseline
-        └── Node Exporter
-            └── http://192.168.100.31:9100/metrics
+        ├── Node Exporter
+        │   └── http://192.168.100.31:9100/metrics
+        └── Prometheus
+            ├── Web UI: http://192.168.100.31:9090
+            ├── Readiness: http://192.168.100.31:9090/-/ready
+            └── Targets API: http://192.168.100.31:9090/api/v1/targets
 ```
 
 ---
 
-## Monitoring Foundation
+## Monitoring Architecture
 
-The monitoring foundation currently uses **Prometheus Node Exporter**.
+The monitoring stack currently contains:
 
-Node Exporter is deployed to all Linux nodes and exposes system metrics on port `9100`.
+```text
+Node Exporter
+Prometheus
+```
 
-Current Node Exporter endpoints:
+Node Exporter runs on every Linux node and exposes system metrics on port `9100`.
+
+Prometheus runs on `monitor-01` and collects metrics from all Node Exporter endpoints.
+
+```text
+web-01:9100
+web-02:9100
+db-01:9100
+monitor-01:9100
+        |
+        v
+monitor-01:9090
+Prometheus Server
+```
+
+Current Node Exporter targets:
 
 | Hostname | IP Address | Metrics Endpoint |
 |---|---:|---|
@@ -123,24 +146,28 @@ Current Node Exporter endpoints:
 | `db-01` | `192.168.100.21` | `http://192.168.100.21:9100/metrics` |
 | `monitor-01` | `192.168.100.31` | `http://192.168.100.31:9100/metrics` |
 
-Node Exporter exposes metrics such as:
+Prometheus endpoint:
+
+| Service | Hostname | IP Address | Endpoint |
+|---|---|---:|---|
+| Prometheus | `monitor-01` | `192.168.100.31` | `http://192.168.100.31:9090` |
+
+Prometheus scrape jobs currently configured:
 
 ```text
-CPU metrics
-memory metrics
-disk metrics
-filesystem metrics
-network metrics
-system load metrics
-boot time metrics
+prometheus
+node_exporter
 ```
+
+The `prometheus` job scrapes Prometheus itself.
+
+The `node_exporter` job scrapes Linux metrics from all managed nodes.
 
 Future monitoring stages will add:
 
 ```text
-Prometheus server on monitor-01
 Grafana on monitor-01
-Prometheus scrape configuration
+Prometheus data source configuration
 Grafana dashboards
 ```
 
@@ -186,6 +213,8 @@ Node IP plan:
 | PostgreSQL | Database server deployed to `db-01` |
 | community.postgresql | Ansible collection for PostgreSQL automation |
 | Prometheus Node Exporter | Linux system metrics exporter |
+| Prometheus | Metrics collection and time-series monitoring server |
+| promtool | Prometheus configuration validation |
 | systemd | Service management on Linux nodes |
 | yamllint | YAML syntax and formatting validation |
 | ansible-lint | Ansible best-practice validation |
@@ -208,13 +237,15 @@ enterprise-automation-lab/
 │   │       ├── hosts.ini
 │   │       └── group_vars/
 │   │           ├── database.yml
-│   │           └── linux.yml
+│   │           ├── linux.yml
+│   │           └── monitoring.yml
 │   ├── playbooks/
 │   │   ├── 01-bootstrap-linux.yml
 │   │   ├── 02-apply-linux-baseline.yml
 │   │   ├── 03-deploy-nginx.yml
 │   │   ├── 04-deploy-postgresql.yml
-│   │   └── 05-deploy-node-exporter.yml
+│   │   ├── 05-deploy-node-exporter.yml
+│   │   └── 06-deploy-prometheus.yml
 │   └── roles/
 │       ├── linux_baseline/
 │       │   ├── defaults/
@@ -232,7 +263,13 @@ enterprise-automation-lab/
 │       │   ├── handlers/
 │       │   ├── meta/
 │       │   └── tasks/
-│       └── node_exporter/
+│       ├── node_exporter/
+│       │   ├── defaults/
+│       │   ├── handlers/
+│       │   ├── meta/
+│       │   ├── tasks/
+│       │   └── templates/
+│       └── prometheus/
 │           ├── defaults/
 │           ├── handlers/
 │           ├── meta/
@@ -301,7 +338,7 @@ The `web` group is used for Nginx deployment.
 
 The `database` group is used for PostgreSQL deployment.
 
-The `monitoring` group is reserved for monitoring services such as Prometheus and Grafana.
+The `monitoring` group is used for Prometheus and future Grafana deployment.
 
 ---
 
@@ -487,6 +524,61 @@ Node Exporter exposes metrics on:
 
 ---
 
+### prometheus
+
+Path:
+
+```text
+ansible/roles/prometheus/
+```
+
+Purpose:
+
+```text
+Deploy Prometheus server on the monitoring node.
+```
+
+The role performs:
+
+- Prometheus system group creation
+- Prometheus system user creation
+- configuration directory creation
+- data directory creation
+- Prometheus release archive download
+- archive extraction
+- `prometheus` binary installation
+- `promtool` binary installation
+- Prometheus configuration deployment from a Jinja2 template
+- configuration validation with `promtool`
+- systemd service deployment from a Jinja2 template
+- service enablement and startup
+- readiness endpoint validation
+- targets API validation
+- service state validation with `service_facts` and `assert`
+
+Target group:
+
+```text
+monitoring
+```
+
+Prometheus listens on:
+
+```text
+0.0.0.0:9090
+```
+
+Current Prometheus scrape targets:
+
+```text
+192.168.100.11:9100
+192.168.100.12:9100
+192.168.100.21:9100
+192.168.100.31:9100
+```
+
+---
+
 ## Playbooks
 
 | Playbook | Purpose |
@@ -496,6 +588,7 @@ Node Exporter exposes metrics on:
 | `ansible/playbooks/03-deploy-nginx.yml` | Deploy Nginx to web servers |
 | `ansible/playbooks/04-deploy-postgresql.yml` | Deploy PostgreSQL to database server |
 | `ansible/playbooks/05-deploy-node-exporter.yml` | Deploy Prometheus Node Exporter to all Linux nodes |
+| `ansible/playbooks/06-deploy-prometheus.yml` | Deploy Prometheus server to the monitoring node |
 
 ---
 
@@ -521,6 +614,7 @@ ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
 ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
 ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
 ansible-playbook playbooks/05-deploy-node-exporter.yml --syntax-check
+ansible-playbook playbooks/06-deploy-prometheus.yml --syntax-check
 ```
 
 ---
@@ -556,6 +650,12 @@ Deploy Node Exporter:
 
 ```bash
 ansible-playbook playbooks/05-deploy-node-exporter.yml
+```
+
+Deploy Prometheus:
+
+```bash
+ansible-playbook playbooks/06-deploy-prometheus.yml
 ```
 
 ---
@@ -615,6 +715,55 @@ Expected output contains Prometheus-style metrics:
 
 ---
 
+### Prometheus Validation
+
+Validate Prometheus service:
+
+```bash
+ansible monitoring -m command -a "systemctl is-active prometheus"
+ansible monitoring -m command -a "systemctl is-enabled prometheus"
+```
+
+Validate Prometheus readiness endpoint:
+
+```bash
+curl -s http://192.168.100.31:9090/-/ready
+```
+
+Expected output:
+
+```text
+Prometheus Server is Ready.
+```
+
+Validate Prometheus targets API:
+
+```bash
+curl -s http://192.168.100.31:9090/api/v1/targets | head
+```
+
+Open Prometheus UI:
+
+```text
+http://192.168.100.31:9090
+```
+
+Useful Prometheus queries:
+
+```promql
+up
+```
+
+```promql
+node_uname_info
+```
+
+```promql
+node_memory_MemAvailable_bytes
+```
+
+---
+
 ## GitHub Actions Validation
 
 GitHub Actions automatically runs validation on:
@@ -633,8 +782,8 @@ The workflow validates:
 
 - YAML formatting with `yamllint`
 - Ansible best practices with `ansible-lint`
-- syntax of all current Ansible playbooks
 - required Ansible collection installation from `requirements.yml`
+- syntax of all current Ansible playbooks
 
 Current playbooks checked by CI:
 
@@ -644,6 +793,7 @@ Current playbooks checked by CI:
 03-deploy-nginx.yml
 04-deploy-postgresql.yml
 05-deploy-node-exporter.yml
+06-deploy-prometheus.yml
 ```
 
 ---
@@ -668,6 +818,11 @@ Node Exporter role:                 successful
 Node Exporter idempotency:          changed=0
 Node Exporter service state:        active and enabled
 Node Exporter metrics endpoints:    reachable on port 9100
+Prometheus role:                    successful
+Prometheus idempotency:             changed=0
+Prometheus service state:           active and enabled
+Prometheus readiness endpoint:      successful
+Prometheus targets API:             successful
 yamllint:                           successful
 ansible-lint:                       successful
 GitHub Actions:                     successful after workflow validation
@@ -695,6 +850,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-03-nginx-role.md` | Nginx role for web servers |
 | `docs/runbooks/stage-02-05-postgresql-role.md` | PostgreSQL role for database server |
 | `docs/runbooks/stage-02-06-node-exporter-role.md` | Prometheus Node Exporter role for Linux metrics |
+| `docs/runbooks/stage-02-07-prometheus-role.md` | Prometheus server role for metrics collection |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -716,6 +872,7 @@ docs/screenshots/stage-02-multi-node-automation/
 docs/screenshots/stage-02-nginx-role/
 docs/screenshots/stage-02-postgresql-role/
 docs/screenshots/stage-02-node-exporter-role/
+docs/screenshots/stage-02-prometheus-role/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -728,9 +885,8 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 2.7 | Prometheus server role for `monitor-01` |
 | Stage 2.8 | Grafana role for `monitor-01` |
-| Stage 2.9 | Prometheus scrape configuration for all Node Exporter targets |
+| Stage 2.9 | Grafana Prometheus data source configuration |
 | Stage 2.10 | Monitoring validation and dashboard screenshots |
 | Stage 3 | Advanced Ansible: templates, handlers, Vault, tags |
 | Stage 4 | Terraform foundations |
@@ -760,6 +916,8 @@ This project demonstrates practical experience with:
 - service-specific role design
 - PostgreSQL automation
 - Linux metrics exposure with Node Exporter
+- Prometheus metrics collection
+- Prometheus configuration validation with promtool
 - monitoring foundation design
 - YAML linting
 - Ansible linting
@@ -771,7 +929,7 @@ This project demonstrates practical experience with:
 ## Current Status Summary
 
 ```text
-The project has completed the first multi-node automation and monitoring foundation phase.
+The project has completed the first multi-node automation and monitoring collection phase.
 
 The lab can manage all Linux nodes through Ansible using SSH key authentication.
 The Linux baseline role is applied to all nodes.
@@ -779,5 +937,7 @@ The Nginx role is applied to web servers.
 The PostgreSQL role is applied to the database server.
 The Node Exporter role is applied to all Linux nodes.
 All Linux nodes expose Prometheus-compatible metrics on port 9100.
+The Prometheus role is applied to the monitoring server.
+Prometheus collects metrics from all Node Exporter targets.
 The project passes local linting and GitHub Actions validation.
 ```

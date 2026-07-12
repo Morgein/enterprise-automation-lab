@@ -72,3 +72,7 @@ jobs:
       - name: Syntax check Node Exporter deployment playbook
         working-directory: ansible
         run: ansible-playbook playbooks/05-deploy-node-exporter.yml --syntax-check
+
+      - name: Syntax check Prometheus deployment playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/06-deploy-prometheus.yml --syntax-check
