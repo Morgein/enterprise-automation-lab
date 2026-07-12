@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 2.10 - Monitoring stack final validation
+Stage 3.1 - Site playbook and operational tags
 ```
 
 Completed stages:
@@ -44,6 +44,7 @@ Completed stages:
 | Stage 2.8 | Grafana role for metrics visualization | Completed |
 | Stage 2.9 | Grafana dashboard provisioning | Completed |
 | Stage 2.10 | Monitoring stack final validation | Completed |
+| Stage 3.1 | Site playbook and operational tags | Completed |
 ---
 
 ## Lab Architecture
@@ -313,6 +314,7 @@ enterprise-automation-lab/
 │   │           ├── linux.yml
 │   │           └── monitoring.yml
 │   ├── playbooks/
+│   │   ├── site.yml
 │   │   ├── 01-bootstrap-linux.yml
 │   │   ├── 02-apply-linux-baseline.yml
 │   │   ├── 03-deploy-nginx.yml
@@ -738,6 +740,7 @@ http://127.0.0.1:9090
 
 | Playbook | Purpose |
 |---|---|
+| `ansible/playbooks/site.yml` | Main operational playbook that imports the current infrastructure stack |
 | `ansible/playbooks/01-bootstrap-linux.yml` | Initial bootstrap playbook |
 | `ansible/playbooks/02-apply-linux-baseline.yml` | Apply Linux baseline role |
 | `ansible/playbooks/03-deploy-nginx.yml` | Deploy Nginx to web servers |
@@ -746,6 +749,59 @@ http://127.0.0.1:9090
 | `ansible/playbooks/06-deploy-prometheus.yml` | Deploy Prometheus server to the monitoring node |
 | `ansible/playbooks/07-deploy-grafana.yml` | Deploy Grafana and provision dashboards on the monitoring node |
 
+---
+
+## Site Playbook and Operational Tags
+
+The project now includes a main Ansible site playbook:
+
+```text
+ansible/playbooks/site.yml
+```
+
+The site playbook imports the main infrastructure playbooks and provides one central operational entrypoint.
+
+Full current stack deployment:
+
+```bash
+ansible-playbook playbooks/site.yml
+```
+
+Selective deployment with tags:
+
+```bash
+ansible-playbook playbooks/site.yml --tags monitoring
+ansible-playbook playbooks/site.yml --tags grafana
+ansible-playbook playbooks/site.yml --tags web
+ansible-playbook playbooks/site.yml --tags database
+```
+
+Available operational tags include:
+
+```text
+baseline
+common
+dashboards
+database
+grafana
+linux
+metrics
+monitoring
+nginx
+node_exporter
+postgresql
+stage_02
+web
+```
+
+The site playbook allows the lab to support both execution models:
+
+```text
+individual playbook execution
+central site.yml execution with tags
+```
+
+This improves operational control and makes the Ansible structure closer to production-style automation.
 ---
 
 ## Validation
@@ -765,6 +821,7 @@ Run from the Ansible directory:
 ```bash
 cd ansible
 ansible-lint .
+ansible-playbook playbooks/site.yml --syntax-check
 ansible-playbook playbooks/01-bootstrap-linux.yml --syntax-check
 ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
 ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
@@ -821,6 +878,35 @@ Deploy Grafana and dashboards:
 ansible-playbook playbooks/07-deploy-grafana.yml
 ```
 
+Deploy the full current stack through the site playbook:
+
+```bash
+ansible-playbook playbooks/site.yml
+```
+
+Deploy only the monitoring stack:
+
+```bash
+ansible-playbook playbooks/site.yml --tags monitoring
+```
+
+Deploy only Grafana:
+
+```bash
+ansible-playbook playbooks/site.yml --tags grafana
+```
+
+Deploy only the web layer:
+
+```bash
+ansible-playbook playbooks/site.yml --tags web
+```
+
+List available operational tags:
+
+```bash
+ansible-playbook playbooks/site.yml --list-tags
+```
 ---
 
 ### Nginx Validation
@@ -1027,6 +1113,7 @@ The workflow validates:
 Current playbooks checked by CI:
 
 ```text
+site.yml
 01-bootstrap-linux.yml
 02-apply-linux-baseline.yml
 03-deploy-nginx.yml
@@ -1079,6 +1166,12 @@ Prometheus targets final validation:        successful
 Prometheus query validation:                successful
 Grafana dashboard final validation:         successful
 End-to-end monitoring chain validation:     successful
+Site playbook syntax check:              successful
+Site playbook tag listing:               successful
+Monitoring tag execution:                successful
+Grafana tag execution:                   successful
+Full site playbook execution:            successful
+Operational tags validation:             successful
 ```
 
 ---
@@ -1107,6 +1200,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-08-grafana-role.md` | Grafana role for metrics visualization |
 | `docs/runbooks/stage-02-09-grafana-dashboard-provisioning.md` | Grafana dashboard provisioning |
 | `docs/runbooks/stage-02-10-monitoring-final-validation.md` | Monitoring stack final validation |
+| `docs/runbooks/stage-03-01-site-playbook-and-tags.md` | Site playbook and operational tags |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1132,6 +1226,7 @@ docs/screenshots/stage-02-prometheus-role/
 docs/screenshots/stage-02-grafana-role/
 docs/screenshots/stage-02-grafana-dashboard-provisioning/
 docs/screenshots/stage-02-monitoring-final-validation/
+docs/screenshots/stage-03-site-playbook-and-tags/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1144,7 +1239,9 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 3 | Advanced Ansible: templates, handlers, Vault, tags |
+| Stage 3.2 | Ansible Vault for secret management |
+| Stage 3.3 | Environment separation for dev and prod inventories |
+| Stage 3.4 | Advanced handlers, pre_tasks and post_tasks |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
 | Stage 6 | CI/CD and final automation platform documentation |
@@ -1183,6 +1280,10 @@ This project demonstrates practical experience with:
 - Ansible linting
 - GitHub Actions CI validation
 - infrastructure documentation and runbooks
+- Ansible site playbook design
+- operational tags
+- selective playbook execution
+- centralized Ansible entrypoint
 
 ---
 
@@ -1205,4 +1306,8 @@ Grafana automatically loads the Enterprise Linux Overview dashboard.
 The full monitoring chain has been validated end-to-end.
 The completed monitoring flow is Node Exporter -> Prometheus -> Grafana -> Dashboard.
 The project passes local linting and GitHub Actions validation.
+The project now includes a central site.yml playbook.
+The full infrastructure stack can be deployed through one main Ansible entrypoint.
+Operational tags allow selective execution of baseline, web, database, monitoring, Grafana and dashboard automation.
+The project supports both individual playbook execution and central site playbook execution.
 ```

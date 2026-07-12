@@ -3,6 +3,15 @@
   hosts: linux
   become: true
   gather_facts: true
+  tags:
+    - monitoring
+    - metrics
+    - node_exporter
+    - stage_02
 
   roles:
-    - node_exporter
+    - role: node_exporter
+      tags:
+        - monitoring
+        - metrics
+        - node_exporter

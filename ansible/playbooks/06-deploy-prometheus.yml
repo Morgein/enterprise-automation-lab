@@ -1,8 +1,17 @@
 ---
-- name: Deploy Prometheus monitoring server
+- name: Deploy Grafana visualization server
   hosts: monitoring
   become: true
   gather_facts: true
+  tags:
+    - monitoring
+    - grafana
+    - dashboards
+    - stage_02
 
   roles:
-    - prometheus
+    - role: grafana
+      tags:
+        - monitoring
+        - grafana
+        - dashboards

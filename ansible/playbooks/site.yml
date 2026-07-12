@@ -1,0 +1,45 @@
+---
+- name: Apply Linux baseline
+  ansible.builtin.import_playbook: 02-apply-linux-baseline.yml
+  tags:
+    - baseline
+    - linux
+    - common
+    - stage_02
+
+- name: Deploy web layer
+  ansible.builtin.import_playbook: 03-deploy-nginx.yml
+  tags:
+    - web
+    - nginx
+    - stage_02
+
+- name: Deploy database layer
+  ansible.builtin.import_playbook: 04-deploy-postgresql.yml
+  tags:
+    - database
+    - postgresql
+    - stage_02
+
+- name: Deploy Node Exporter metrics layer
+  ansible.builtin.import_playbook: 05-deploy-node-exporter.yml
+  tags:
+    - monitoring
+    - metrics
+    - node_exporter
+    - stage_02
+
+- name: Deploy Prometheus monitoring server
+  ansible.builtin.import_playbook: 06-deploy-prometheus.yml
+  tags:
+    - monitoring
+    - prometheus
+    - stage_02
+
+- name: Deploy Grafana visualization layer
+  ansible.builtin.import_playbook: 07-deploy-grafana.yml
+  tags:
+    - monitoring
+    - grafana
+    - dashboards
+    - stage_02

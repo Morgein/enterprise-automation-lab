@@ -1,9 +1,17 @@
 ---
-- name: Apply Linux baseline configuration
+- name: Apply Linux baseline to all Linux nodes
   hosts: linux
   become: true
   gather_facts: true
-
+  tags:
+    - baseline
+    - linux
+    - common
+    - stage_02
 
   roles:
-    - linux_baseline
+    - role: linux_baseline
+      tags:
+        - baseline
+        - linux
+        - common

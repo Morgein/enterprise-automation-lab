@@ -1,9 +1,15 @@
 ---
-- name: Deploy PostgresSQL database server
+- name: Deploy PostgreSQL database server
   hosts: database
   become: true
   gather_facts: true
-
+  tags:
+    - database
+    - postgresql
+    - stage_02
 
   roles:
-    - postgresql
+    - role: postgresql
+      tags:
+        - database
+        - postgresql

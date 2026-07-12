@@ -1,9 +1,15 @@
 ---
-
-- name: Deploy nginx web servers
+- name: Deploy Nginx web servers
   hosts: web
   become: true
   gather_facts: true
+  tags:
+    - web
+    - nginx
+    - stage_02
 
   roles:
-    - nginx
+    - role: nginx
+      tags:
+        - web
+        - nginx

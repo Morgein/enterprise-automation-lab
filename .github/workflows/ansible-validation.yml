@@ -80,3 +80,7 @@ jobs:
       - name: Syntax check Grafana deployment playbook
         working-directory: ansible
         run: ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check
+
+      - name: Syntax check site playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/site.yml --syntax-check
