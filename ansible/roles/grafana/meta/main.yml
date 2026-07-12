@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  author: Morgein
+  description: Grafana role for the Enterprise Automation Lab
+  company: Personal Lab
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+        - jammy
+
+  galaxy_tags:
+    - monitoring
+    - grafana
+    - dashboards
+    - visualization
+    - automation
+
+dependencies: []

@@ -76,3 +76,7 @@ jobs:
       - name: Syntax check Prometheus deployment playbook
         working-directory: ansible
         run: ansible-playbook playbooks/06-deploy-prometheus.yml --syntax-check
+
+      - name: Syntax check Grafana deployment playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check

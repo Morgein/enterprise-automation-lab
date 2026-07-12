@@ -1,0 +1,90 @@
+---
+- name: Install Grafana prerequisite packages
+  ansible.builtin.apt:
+    name: "{{ grafana_prerequisite_packages }}"
+    state: present
+    update_cache: true
+
+- name: Download Grafana APT repository key
+  ansible.builtin.get_url:
+    url: "{{ grafana_apt_key_url }}"
+    dest: "{{ grafana_apt_key_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add Grafana APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by={{ grafana_apt_key_path }}] {{ grafana_apt_repository_url }} stable main"
+    filename: grafana
+    state: present
+    update_cache: true
+
+- name: Install Grafana package
+  ansible.builtin.apt:
+    name: "{{ grafana_package_name }}"
+    state: present
+    update_cache: true
+
+- name: Ensure Grafana datasource provisioning directory exists
+  ansible.builtin.file:
+    path: "{{ grafana_provisioning_datasources_dir }}"
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+
+- name: Deploy Prometheus datasource provisioning file
+  ansible.builtin.template:
+    src: prometheus-datasource.yml.j2
+    dest: "{{ grafana_prometheus_datasource_file }}"
+    owner: root
+    group: grafana
+    mode: "0644"
+  notify: Restart grafana
+
+- name: Ensure Grafana service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ grafana_service_name }}"
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for Grafana TCP port to become available
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ grafana_http_port }}"
+    timeout: 90
+
+- name: Validate Grafana health endpoint locally
+  ansible.builtin.uri:
+    url: "{{ grafana_health_url }}"
+    status_code: 200
+    return_content: true
+  register: grafana_health_result
+  retries: 10
+  delay: 3
+  until: grafana_health_result.status == 200
+  changed_when: false
+
+- name: Show Grafana health response
+  ansible.builtin.debug:
+    var: grafana_health_result.json
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Validate Grafana service facts
+  ansible.builtin.assert:
+    that:
+      - "ansible_facts.services[grafana_service_name ~ '.service'].state == 'running'"
+      - "ansible_facts.services[grafana_service_name ~ '.service'].status == 'enabled'"
+    success_msg: "Grafana service is running and enabled"
+    fail_msg: "Grafana service is not running or not enabled"
+
+- name: Show Grafana service facts
+  ansible.builtin.debug:
+    msg:
+      - "Service: {{ grafana_service_name }}"
+      - "State: {{ ansible_facts.services[grafana_service_name ~ '.service'].state }}"
+      - "Status: {{ ansible_facts.services[grafana_service_name ~ '.service'].status }}"

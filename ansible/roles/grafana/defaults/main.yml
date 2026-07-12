@@ -1,0 +1,31 @@
+---
+# Default variables for the grafana role.
+# These values can be overridden by inventory group_vars or host_vars.
+
+grafana_prerequisite_packages:
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - python3-apt
+
+grafana_apt_key_url: https://apt.grafana.com/gpg.key
+
+grafana_apt_key_path: /usr/share/keyrings/grafana.asc
+
+grafana_apt_repository_url: https://apt.grafana.com
+
+grafana_package_name: grafana
+
+grafana_service_name: grafana-server
+
+grafana_provisioning_datasources_dir: /etc/grafana/provisioning/datasources
+
+grafana_prometheus_datasource_file: "{{ grafana_provisioning_datasources_dir }}/prometheus.yml"
+
+grafana_prometheus_datasource_name: Prometheus
+
+grafana_prometheus_url: http://127.0.0.1:9090
+
+grafana_http_port: 3000
+
+grafana_health_url: "http://127.0.0.1:{{ grafana_http_port }}/api/health"
