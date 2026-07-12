@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 2.9 - Grafana dashboard provisioning
+Stage 2.10 - Monitoring stack final validation
 ```
 
 Completed stages:
@@ -43,7 +43,7 @@ Completed stages:
 | Stage 2.7 | Prometheus server role for metrics collection | Completed |
 | Stage 2.8 | Grafana role for metrics visualization | Completed |
 | Stage 2.9 | Grafana dashboard provisioning | Completed |
-
+| Stage 2.10 | Monitoring stack final validation | Completed |
 ---
 
 ## Lab Architecture
@@ -214,7 +214,33 @@ Root Filesystem Free Space
 System Load 1m
 Network Receive Traffic
 ```
+```markdown
+Final monitoring validation confirms the complete end-to-end chain:
 
+```text
+Linux Nodes
+  -> Node Exporter
+  -> Prometheus
+  -> Grafana
+  -> Enterprise Linux Overview Dashboard
+```
+
+Validated monitoring components:
+
+```text
+Node Exporter services active and enabled
+Node Exporter metrics endpoints reachable
+Prometheus service active and enabled
+Prometheus readiness endpoint healthy
+Prometheus targets API healthy
+Prometheus UI shows targets UP
+Prometheus query engine returns metrics
+Grafana service active and enabled
+Grafana health endpoint healthy
+Grafana Prometheus datasource provisioned
+Grafana dashboard provisioned and displaying metrics
+```
+```
 ---
 
 ## Network Design
@@ -1047,6 +1073,12 @@ Enterprise Linux Overview dashboard:    provisioned
 yamllint:                               successful
 ansible-lint:                           successful
 GitHub Actions:                         successful after workflow validation
+Monitoring services final validation:       successful
+Node Exporter endpoints final validation:   successful
+Prometheus targets final validation:        successful
+Prometheus query validation:                successful
+Grafana dashboard final validation:         successful
+End-to-end monitoring chain validation:     successful
 ```
 
 ---
@@ -1074,6 +1106,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-07-prometheus-role.md` | Prometheus server role for metrics collection |
 | `docs/runbooks/stage-02-08-grafana-role.md` | Grafana role for metrics visualization |
 | `docs/runbooks/stage-02-09-grafana-dashboard-provisioning.md` | Grafana dashboard provisioning |
+| `docs/runbooks/stage-02-10-monitoring-final-validation.md` | Monitoring stack final validation |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1098,6 +1131,7 @@ docs/screenshots/stage-02-node-exporter-role/
 docs/screenshots/stage-02-prometheus-role/
 docs/screenshots/stage-02-grafana-role/
 docs/screenshots/stage-02-grafana-dashboard-provisioning/
+docs/screenshots/stage-02-monitoring-final-validation/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1110,7 +1144,6 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 2.10 | Monitoring stack final validation and screenshots |
 | Stage 3 | Advanced Ansible: templates, handlers, Vault, tags |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
@@ -1169,5 +1202,7 @@ Prometheus collects metrics from all Node Exporter targets.
 The Grafana role is applied to the monitoring server.
 Grafana is connected to Prometheus through provisioning.
 Grafana automatically loads the Enterprise Linux Overview dashboard.
+The full monitoring chain has been validated end-to-end.
+The completed monitoring flow is Node Exporter -> Prometheus -> Grafana -> Dashboard.
 The project passes local linting and GitHub Actions validation.
 ```

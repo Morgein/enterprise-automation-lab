@@ -1,19 +1,25 @@
-# Architecture
+# Enterprise Automation Lab - Architecture
 
-## 1. Project Overview
+## 1. Purpose
 
-**Enterprise Automation Lab** is a local infrastructure automation project designed to simulate a small enterprise-style Linux environment.
+This document describes the architecture of the Enterprise Automation Lab.
 
-The project uses:
+The lab is designed as a local enterprise-style infrastructure automation environment.
 
-- **Kali Linux WSL** as the automation control workstation
-- **Hyper-V** as the local virtualization platform
-- **Ansible** for configuration management and orchestration
-- **Terraform** for Infrastructure as Code concepts and future cloud provisioning
-- **AWS CloudFormation** for AWS-native IaC practice
-- **GitHub** for version control, documentation and CI/CD validation
+It uses:
 
-The main goal of this project is to build infrastructure automation skills step by step: from basic Ansible usage to more advanced automation patterns used in real infrastructure and DevOps environments.
+```text
+Windows 11 Host
+Hyper-V
+Kali Linux WSL
+Ubuntu Server VMs
+Ansible
+Prometheus
+Grafana
+GitHub Actions
+```
+
+The main goal is to practice infrastructure automation, monitoring, validation, and documentation in a realistic multi-node environment.
 
 ---
 
@@ -23,329 +29,856 @@ The main goal of this project is to build infrastructure automation skills step 
 Windows 11 Host
 │
 ├── Kali Linux WSL
-│   └── Automation Control Workstation
+│   └── Automation Control Node
 │       ├── Git
 │       ├── SSH Client
-│       ├── Python 3
+│       ├── Python
 │       ├── Ansible
 │       ├── ansible-lint
-│       ├── yamllint
-│       └── Terraform later
+│       └── yamllint
 │
 └── Hyper-V
     └── Internal NAT Network: 192.168.100.0/24
         │
-        ├── web-01
-        │   └── Web server / Application node
-        │
-        ├── web-02
-        │   └── Second web server / Application node
-        │
-        ├── db-01
-        │   └── PostgreSQL database server
-        │
-        └── monitor-01
-            └── Monitoring server
+        ├── web-01      192.168.100.11
+        ├── web-02      192.168.100.12
+        ├── db-01       192.168.100.21
+        └── monitor-01  192.168.100.31
 ```
 
----
+The Windows host provides virtualization through Hyper-V.
 
-## 3. Main Components
+Kali Linux WSL acts as the automation control workstation.
 
-### 3.1 Windows 11 Host
-
-The Windows host provides the physical resources for the whole lab.
-
-Responsibilities:
-
-- Runs Hyper-V
-- Runs Kali Linux through WSL
-- Provides CPU, RAM and disk resources
-- Provides the internal NAT network for the lab
-- Acts as the gateway for Hyper-V virtual machines
+Ubuntu Server virtual machines act as managed infrastructure nodes.
 
 ---
 
-### 3.2 Kali Linux WSL
+## 3. Host System
 
-Kali Linux WSL is used as the **automation control workstation**.
+The physical host is a Windows 11 machine running Hyper-V.
 
-It is responsible for running automation tools and connecting to managed servers through SSH.
+The host is responsible for:
 
-Main tools:
+```text
+running the Hyper-V virtual machines
+providing the internal virtual switch
+providing NAT connectivity for lab VMs
+hosting Kali Linux WSL
+```
 
-| Tool | Purpose |
-|---|---|
-| Git | Version control and GitHub integration |
-| SSH Client | Remote access to Linux virtual machines |
-| Python 3 | Required by Ansible and automation tools |
-| Ansible | Configuration management and orchestration |
-| ansible-lint | Static analysis for Ansible code |
-| yamllint | YAML validation |
-| Terraform | Infrastructure as Code practice |
-| jq | JSON parsing |
-| tree | Repository structure visualization |
+The host is not directly configured by Ansible in this phase.
 
-Although Kali Linux is mainly designed for security and penetration testing workflows, in this project it is used as a Linux-based automation workstation.
+Ansible runs from Kali Linux WSL and connects to the Linux VMs through SSH.
 
 ---
 
-### 3.3 Hyper-V
+## 4. Control Node
 
-Hyper-V is used as the local virtualization platform.
+The control node is:
 
-It provides the virtual machines that simulate a small enterprise Linux infrastructure.
+```text
+Kali Linux WSL
+```
 
-The Hyper-V environment will contain:
+Its purpose is to manage the lab infrastructure.
 
-- web servers
-- database server
-- monitoring server
-- private internal network
-- NAT access to the internet
+Installed tools:
+
+```text
+git
+ssh
+python
+ansible
+ansible-lint
+yamllint
+ansible-galaxy
+```
+
+The control node stores:
+
+```text
+Ansible inventory
+Ansible playbooks
+Ansible roles
+Ansible collections requirements
+project documentation
+validation commands
+Git repository
+```
+
+The control node connects to all managed Linux nodes using SSH key authentication.
 
 ---
 
-### 3.4 Managed Linux Nodes
-
-The managed nodes are Linux virtual machines running inside Hyper-V.
-
-They will be configured and managed from Kali WSL using Ansible over SSH.
-
-Planned virtual machines:
-
-| Hostname | Role |
-|---|---|
-| web-01 | First web/application server |
-| web-02 | Second web/application server |
-| db-01 | PostgreSQL database server |
-| monitor-01 | Monitoring server |
-
----
-
-## 4. Network Architecture
+## 5. Hyper-V Network Design
 
 The lab uses a dedicated Hyper-V internal NAT network.
 
-This provides stable private IP addresses for all virtual machines and keeps the lab isolated from the physical home network.
-
-### Network Parameters
-
-| Parameter | Value |
+| Component | Value |
 |---|---|
-| Hyper-V Switch Name | EA-LAB-Internal |
-| Switch Type | Internal |
-| NAT Name | EA-LAB-NAT |
-| Subnet | 192.168.100.0/24 |
-| Gateway | 192.168.100.1 |
-| DNS Servers | 1.1.1.1, 8.8.8.8 |
+| Hyper-V Switch | `EA-LAB-Internal` |
+| NAT Name | `EA-LAB-NAT` |
+| Subnet | `192.168.100.0/24` |
+| Gateway | `192.168.100.1` |
+| DNS Servers | `1.1.1.1`, `8.8.8.8` |
 
-### IP Address Plan
+Network purpose:
 
-| Hostname | IP Address | Purpose |
+```text
+isolate the lab from the physical network
+allow VMs to communicate with each other
+allow VMs to reach the internet through NAT
+allow WSL to access VMs by static IP
+```
+
+---
+
+## 6. IP Address Plan
+
+| Hostname | IP Address | Role |
 |---|---:|---|
-| Windows Host Gateway | 192.168.100.1 | NAT gateway |
-| web-01 | 192.168.100.11 | First web server |
-| web-02 | 192.168.100.12 | Second web server |
-| db-01 | 192.168.100.21 | Database server |
-| monitor-01 | 192.168.100.31 | Monitoring server |
+| `web-01` | `192.168.100.11` | First web server |
+| `web-02` | `192.168.100.12` | Second web server |
+| `db-01` | `192.168.100.21` | Database server |
+| `monitor-01` | `192.168.100.31` | Monitoring server |
+
+All nodes are placed in the same lab subnet:
+
+```text
+192.168.100.0/24
+```
+
+This keeps the first phase simple and easy to troubleshoot.
 
 ---
 
-## 5. Network Flow
+## 7. Managed Nodes
+
+### web-01
 
 ```text
-Kali Linux WSL
-     |
-     | SSH
-     v
-Hyper-V Internal NAT Network
-     |
-     ├── web-01
-     ├── web-02
-     ├── db-01
-     └── monitor-01
+Hostname: web-01
+IP:       192.168.100.11
+Group:    web
 ```
 
-The automation control workstation connects to managed nodes using SSH.
-
-Example:
-
-```bash
-ssh automation@192.168.100.11
-```
-
-Ansible will use the same SSH-based connection model.
-
-Example:
-
-```bash
-ansible web -m ping
-```
-
----
-
-## 6. VM Resource Plan
-
-The lab is designed for a laptop with **32 GB RAM**.
-
-The resource allocation is intentionally conservative to keep the Windows host responsive.
-
-| VM | RAM | vCPU | Purpose |
-|---|---:|---:|---|
-| web-01 | 2 GB | 2 | Web/application server |
-| web-02 | 2 GB | 2 | Second web/application server |
-| db-01 | 3 GB | 2 | PostgreSQL database server |
-| monitor-01 | 3 GB | 2 | Monitoring server |
-
-Total planned VM memory usage:
+Services:
 
 ```text
-2 GB + 2 GB + 3 GB + 3 GB = 10 GB
+Linux baseline
+Nginx
+Node Exporter
 ```
 
-This leaves enough memory for:
-
-- Windows 11
-- Kali WSL
-- browser
-- documentation work
-- Git and terminal sessions
-
----
-
-## 7. Automation Design
-
-The project follows a layered automation model.
+Purpose:
 
 ```text
-Infrastructure Layer
-    Hyper-V virtual machines and networking
-
-Operating System Layer
-    Linux users, SSH, packages, services, firewall
-
-Configuration Layer
-    Ansible playbooks, roles, variables and templates
-
-Application Layer
-    Nginx, application services, PostgreSQL, monitoring stack
-
-Validation Layer
-    ansible-lint, yamllint, GitHub Actions
-
-Documentation Layer
-    architecture, runbooks, troubleshooting guides
+acts as the first managed web server
+serves Ansible-managed Nginx content
+exports Linux metrics to Prometheus
 ```
 
 ---
 
-## 8. Ansible Architecture
-
-Ansible will be used to configure and manage the Linux virtual machines.
-
-### Ansible Control Node
+### web-02
 
 ```text
-Kali Linux WSL
+Hostname: web-02
+IP:       192.168.100.12
+Group:    web
 ```
 
-### Ansible Managed Nodes
+Services:
 
 ```text
-web-01
-web-02
-db-01
-monitor-01
+Linux baseline
+Nginx
+Node Exporter
 ```
 
-### Inventory Design
+Purpose:
 
-The development inventory is located here:
+```text
+acts as the second managed web server
+demonstrates multi-node web automation
+exports Linux metrics to Prometheus
+```
+
+---
+
+### db-01
+
+```text
+Hostname: db-01
+IP:       192.168.100.21
+Group:    database
+```
+
+Services:
+
+```text
+Linux baseline
+PostgreSQL
+Node Exporter
+```
+
+Purpose:
+
+```text
+acts as the database server
+hosts the automation_lab PostgreSQL database
+exports Linux metrics to Prometheus
+```
+
+---
+
+### monitor-01
+
+```text
+Hostname: monitor-01
+IP:       192.168.100.31
+Group:    monitoring
+```
+
+Services:
+
+```text
+Linux baseline
+Node Exporter
+Prometheus
+Grafana
+```
+
+Purpose:
+
+```text
+acts as the monitoring server
+collects metrics from all Linux nodes
+provides Prometheus UI
+provides Grafana UI
+hosts provisioned monitoring dashboards
+```
+
+---
+
+## 8. Ansible Inventory Architecture
+
+Inventory file:
 
 ```text
 ansible/inventories/dev/hosts.ini
 ```
 
-Planned inventory groups:
+Current inventory:
 
 ```ini
 [web]
-web-01
-web-02
+web-01 ansible_host=192.168.100.11
+web-02 ansible_host=192.168.100.12
 
 [database]
-db-01
+db-01 ansible_host=192.168.100.21
 
 [monitoring]
-monitor-01
+monitor-01 ansible_host=192.168.100.31
 
 [linux:children]
 web
 database
 monitoring
+
+[linux:vars]
+ansible_user=automation
+ansible_ssh_private_key_file=~/.ssh/enterprise_automation_lab
 ```
 
-### Ansible Connection Model
+Inventory group meaning:
+
+| Group | Purpose |
+|---|---|
+| `web` | Web servers managed by the Nginx role |
+| `database` | Database servers managed by the PostgreSQL role |
+| `monitoring` | Monitoring servers managed by Prometheus and Grafana roles |
+| `linux` | Parent group containing all Linux managed nodes |
+
+The `linux` group allows common roles to be applied to all Linux nodes.
+
+Examples:
 
 ```text
-Ansible Control Node
-        |
-        | SSH
-        v
-Managed Linux Nodes
+linux_baseline
+node_exporter
 ```
-
-Ansible does not require a permanent agent on the managed servers.  
-It connects over SSH, runs tasks, and returns the result.
 
 ---
 
-## 9. Planned Service Architecture
+## 9. SSH Access Model
 
-The final lab will gradually evolve into a small automated infrastructure stack.
+Ansible connects to managed nodes through SSH.
+
+SSH user:
 
 ```text
-User / Browser
-      |
-      v
-web-01 / web-02
-      |
-      v
+automation
+```
+
+SSH key:
+
+```text
+~/.ssh/enterprise_automation_lab
+```
+
+The automation user has passwordless sudo on managed nodes.
+
+This allows Ansible to perform privileged operations such as:
+
+```text
+installing packages
+managing systemd services
+creating system users
+writing files under /etc
+writing files under /usr/local/bin
+writing files under /var/lib
+```
+
+---
+
+## 10. Ansible Role Architecture
+
+The project uses role-based automation.
+
+Current roles:
+
+```text
+linux_baseline
+nginx
+postgresql
+node_exporter
+prometheus
+grafana
+```
+
+Role layout pattern:
+
+```text
+role_name/
+├── defaults/
+│   └── main.yml
+├── handlers/
+│   └── main.yml
+├── meta/
+│   └── main.yml
+├── tasks/
+│   └── main.yml
+└── templates/
+```
+
+Not every role needs templates.
+
+Roles that generate files dynamically use Jinja2 templates.
+
+---
+
+## 11. Service Deployment Architecture
+
+```text
+Kali Linux WSL
+    |
+    | SSH / Ansible
+    v
+Managed Linux Nodes
+    |
+    ├── web-01
+    │   ├── Linux baseline
+    │   ├── Nginx
+    │   └── Node Exporter
+    │
+    ├── web-02
+    │   ├── Linux baseline
+    │   ├── Nginx
+    │   └── Node Exporter
+    │
+    ├── db-01
+    │   ├── Linux baseline
+    │   ├── PostgreSQL
+    │   └── Node Exporter
+    │
+    └── monitor-01
+        ├── Linux baseline
+        ├── Node Exporter
+        ├── Prometheus
+        └── Grafana
+```
+
+Ansible is responsible for installing, configuring, validating, and documenting these services.
+
+---
+
+## 12. Web Layer Architecture
+
+The web layer contains:
+
+```text
+web-01
+web-02
+```
+
+Each web server runs:
+
+```text
+Nginx
+```
+
+Nginx serves a custom Ansible-managed `index.html`.
+
+The Nginx role manages:
+
+```text
+Nginx package installation
+web root directory
+index.html template
+Nginx service state
+HTTP validation
+```
+
+Web endpoints:
+
+```text
+http://192.168.100.11
+http://192.168.100.12
+```
+
+---
+
+## 13. Database Layer Architecture
+
+The database layer contains:
+
+```text
 db-01
-      |
-      v
+```
+
+The database server runs:
+
+```text
+PostgreSQL
+```
+
+The PostgreSQL role manages:
+
+```text
+PostgreSQL package installation
+PostgreSQL service state
+PostgreSQL database creation
+PostgreSQL version validation
+PostgreSQL query validation
+```
+
+Current database:
+
+```text
+automation_lab
+```
+
+The database is currently used as an infrastructure service demonstration.
+
+Application integration may be added in later project stages.
+
+---
+
+## 14. Monitoring Layer Architecture
+
+The monitoring layer contains:
+
+```text
+Node Exporter
+Prometheus
+Grafana
+Provisioned Grafana Dashboard
+```
+
+High-level monitoring flow:
+
+```text
+Linux nodes
+  -> Node Exporter
+  -> Prometheus
+  -> Grafana
+  -> Enterprise Linux Overview Dashboard
+```
+
+Detailed monitoring architecture:
+
+```text
+web-01:9100
+web-02:9100
+db-01:9100
+monitor-01:9100
+        |
+        v
+monitor-01:9090
+Prometheus
+        |
+        v
+monitor-01:3000
+Grafana
+        |
+        v
+Enterprise Linux Overview Dashboard
+```
+
+---
+
+## 15. Node Exporter Architecture
+
+Node Exporter runs on every Linux node.
+
+Hosts:
+
+```text
+web-01
+web-02
+db-01
 monitor-01
 ```
 
-Planned services:
+Node Exporter listens on:
 
-| Server | Planned Services |
-|---|---|
-| web-01 | Nginx, application runtime |
-| web-02 | Nginx, application runtime |
-| db-01 | PostgreSQL |
-| monitor-01 | Prometheus, Grafana, exporters |
+```text
+0.0.0.0:9100
+```
+
+Metrics endpoints:
+
+```text
+http://192.168.100.11:9100/metrics
+http://192.168.100.12:9100/metrics
+http://192.168.100.21:9100/metrics
+http://192.168.100.31:9100/metrics
+```
+
+Node Exporter exposes Linux system metrics such as:
+
+```text
+CPU metrics
+memory metrics
+filesystem metrics
+network metrics
+load average
+kernel and system information
+```
+
+Prometheus scrapes these endpoints.
 
 ---
 
-## 10. Repository Architecture
+## 16. Prometheus Architecture
 
-The repository is organized by automation domain.
+Prometheus runs on:
+
+```text
+monitor-01
+```
+
+Prometheus listens on:
+
+```text
+0.0.0.0:9090
+```
+
+Prometheus endpoints:
+
+```text
+http://192.168.100.31:9090
+http://192.168.100.31:9090/-/ready
+http://192.168.100.31:9090/targets
+http://192.168.100.31:9090/api/v1/targets
+```
+
+Prometheus scrape jobs:
+
+```text
+prometheus
+node_exporter
+```
+
+The `prometheus` job scrapes Prometheus itself.
+
+The `node_exporter` job scrapes all Linux Node Exporter targets.
+
+Current Node Exporter targets:
+
+```text
+192.168.100.11:9100
+192.168.100.12:9100
+192.168.100.21:9100
+192.168.100.31:9100
+```
+
+Prometheus configuration is generated from an Ansible Jinja2 template.
+
+Prometheus configuration file:
+
+```text
+/etc/prometheus/prometheus.yml
+```
+
+Prometheus validates its configuration with:
+
+```text
+promtool check config
+```
+
+before deployment.
+
+---
+
+## 17. Grafana Architecture
+
+Grafana runs on:
+
+```text
+monitor-01
+```
+
+Grafana listens on:
+
+```text
+0.0.0.0:3000
+```
+
+Grafana endpoints:
+
+```text
+http://192.168.100.31:3000
+http://192.168.100.31:3000/api/health
+```
+
+Grafana is configured by Ansible.
+
+The Grafana role manages:
+
+```text
+Grafana package installation
+Grafana APT repository
+Grafana service state
+Prometheus data source provisioning
+dashboard provider provisioning
+Linux overview dashboard provisioning
+Grafana health validation
+```
+
+---
+
+## 18. Grafana Provisioning Architecture
+
+Grafana provisioning is used for reproducible configuration.
+
+The project currently provisions:
+
+```text
+Prometheus data source
+Enterprise Linux Overview dashboard
+```
+
+Prometheus data source file:
+
+```text
+/etc/grafana/provisioning/datasources/prometheus.yml
+```
+
+Dashboard provider file:
+
+```text
+/etc/grafana/provisioning/dashboards/linux-overview.yml
+```
+
+Dashboard JSON file:
+
+```text
+/var/lib/grafana/dashboards/linux-overview.json
+```
+
+Provisioned Grafana folder:
+
+```text
+Enterprise Automation Lab
+```
+
+Provisioned dashboard:
+
+```text
+Enterprise Linux Overview
+```
+
+Dashboard panels:
+
+```text
+Node Exporter Targets UP
+CPU Usage by Instance
+Memory Available by Instance
+Root Filesystem Free Space
+System Load 1m
+Network Receive Traffic
+```
+
+---
+
+## 19. Monitoring Data Flow
+
+The monitoring data flow is:
+
+```text
+Linux operating system
+    |
+    | exposes kernel/system metrics
+    v
+Node Exporter
+    |
+    | HTTP /metrics endpoint
+    v
+Prometheus
+    |
+    | PromQL queries
+    v
+Grafana
+    |
+    | dashboard panels
+    v
+User
+```
+
+Simple explanation:
+
+```text
+Node Exporter exposes metrics.
+Prometheus collects metrics.
+Grafana visualizes metrics.
+```
+
+---
+
+## 20. Automation Flow
+
+The automation flow is:
+
+```text
+User runs Ansible command in Kali WSL
+    |
+    v
+Ansible reads inventory
+    |
+    v
+Ansible connects to target hosts over SSH
+    |
+    v
+Ansible applies roles
+    |
+    v
+Services are installed and configured
+    |
+    v
+Validation tasks confirm service health
+```
+
+Example:
+
+```text
+ansible-playbook playbooks/07-deploy-grafana.yml
+```
+
+Flow:
+
+```text
+Ansible
+  -> connects to monitor-01
+  -> installs Grafana
+  -> configures Prometheus datasource
+  -> deploys dashboard provider
+  -> deploys dashboard JSON
+  -> restarts Grafana if needed
+  -> validates Grafana health endpoint
+```
+
+---
+
+## 21. CI Validation Architecture
+
+The project uses GitHub Actions for static validation.
+
+Workflow file:
+
+```text
+.github/workflows/ansible-validation.yml
+```
+
+The CI pipeline validates:
+
+```text
+YAML formatting
+Ansible best practices
+Ansible playbook syntax
+Ansible collection installation
+```
+
+Current validation tools:
+
+```text
+yamllint
+ansible-lint
+ansible-playbook --syntax-check
+ansible-galaxy collection install
+```
+
+Current playbooks checked by CI:
+
+```text
+01-bootstrap-linux.yml
+02-apply-linux-baseline.yml
+03-deploy-nginx.yml
+04-deploy-postgresql.yml
+05-deploy-node-exporter.yml
+06-deploy-prometheus.yml
+07-deploy-grafana.yml
+```
+
+CI validates code quality before changes are considered stable.
+
+---
+
+## 22. Repository Structure
 
 ```text
 enterprise-automation-lab/
 │
 ├── ansible/
 │   ├── ansible.cfg
+│   ├── requirements.yml
 │   ├── inventories/
-│   │   ├── dev/
-│   │   ├── stage/
-│   │   └── prod/
+│   │   └── dev/
+│   │       ├── hosts.ini
+│   │       └── group_vars/
+│   │           ├── database.yml
+│   │           ├── linux.yml
+│   │           └── monitoring.yml
 │   ├── playbooks/
-│   ├── roles/
-│   ├── group_vars/
-│   └── host_vars/
+│   │   ├── 01-bootstrap-linux.yml
+│   │   ├── 02-apply-linux-baseline.yml
+│   │   ├── 03-deploy-nginx.yml
+│   │   ├── 04-deploy-postgresql.yml
+│   │   ├── 05-deploy-node-exporter.yml
+│   │   ├── 06-deploy-prometheus.yml
+│   │   └── 07-deploy-grafana.yml
+│   └── roles/
+│       ├── linux_baseline/
+│       ├── nginx/
+│       ├── postgresql/
+│       ├── node_exporter/
+│       ├── prometheus/
+│       └── grafana/
+│
+├── cloudformation/
 │
 ├── terraform/
 │   ├── environments/
@@ -353,182 +886,117 @@ enterprise-automation-lab/
 │   │   └── prod/
 │   └── modules/
 │
-├── cloudformation/
-│
 ├── scripts/
 │   └── hyperv/
+│       └── create-lab-network.ps1
 │
 ├── docs/
 │   ├── architecture.md
-│   ├── diagrams/
 │   ├── runbooks/
+│   ├── screenshots/
 │   └── troubleshooting/
 │
 └── .github/
     └── workflows/
+        └── ansible-validation.yml
 ```
 
 ---
 
-## 11. Why This Architecture Is Used
+## 23. Current Service Ports
 
-### Why WSL is used
+| Service | Host | Port | URL |
+|---|---|---:|---|
+| Nginx | `web-01` | `80` | `http://192.168.100.11` |
+| Nginx | `web-02` | `80` | `http://192.168.100.12` |
+| Node Exporter | `web-01` | `9100` | `http://192.168.100.11:9100/metrics` |
+| Node Exporter | `web-02` | `9100` | `http://192.168.100.12:9100/metrics` |
+| Node Exporter | `db-01` | `9100` | `http://192.168.100.21:9100/metrics` |
+| Node Exporter | `monitor-01` | `9100` | `http://192.168.100.31:9100/metrics` |
+| Prometheus | `monitor-01` | `9090` | `http://192.168.100.31:9090` |
+| Grafana | `monitor-01` | `3000` | `http://192.168.100.31:3000` |
 
-WSL provides a Linux automation environment directly on the Windows host.
+---
 
-This avoids the need for an additional control-node virtual machine and saves memory.
+## 24. Security Model
 
-### Why Hyper-V is used
-
-Hyper-V allows the project to simulate real Linux servers locally.
-
-It is suitable for:
-
-- infrastructure labs
-- network isolation
-- repeatable VM testing
-- Windows-based home labs
-
-### Why Internal NAT is used
-
-An internal NAT network provides:
-
-- predictable IP addresses
-- isolation from the home network
-- controlled routing
-- easier Ansible inventory management
-- enterprise-style private network design
-
-### Why Ansible is used
-
-Ansible is used because it is simple, agentless and widely used for configuration management.
-
-It is suitable for:
-
-- package installation
-- service configuration
-- user management
-- SSH hardening
-- firewall configuration
-- application deployment
-- operational automation
-
-### Why Terraform is included
-
-Terraform will be used later to practice Infrastructure as Code concepts.
-
-It will help demonstrate:
-
-- providers
-- resources
-- variables
-- outputs
-- modules
-- state management
-- environment separation
-
-### Why CloudFormation is included
-
-CloudFormation will be used to understand AWS-native infrastructure automation.
-
-It will help compare:
+Current lab security model:
 
 ```text
-Terraform = multi-cloud Infrastructure as Code
-CloudFormation = AWS-native Infrastructure as Code
-Ansible = configuration management and orchestration
+SSH key authentication is used for Ansible access.
+Passwordless sudo is configured for the automation user.
+Services run under dedicated system users where appropriate.
+Prometheus runs as the prometheus user.
+Node Exporter runs as the node_exporter user.
+Grafana runs as the grafana service user.
 ```
 
----
-
-## 12. Project Stages
-
-### Stage 0 - Foundation
-
-- Create GitHub repository
-- Prepare project structure
-- Configure WSL control node
-- Design Hyper-V network
-- Document architecture
-
-### Stage 1 - Ansible Basics
-
-- Configure SSH access
-- Create first inventory
-- Run Ansible ping
-- Execute ad-hoc commands
-- Write first playbooks
-
-### Stage 2 - Ansible Roles
-
-- Create reusable roles
-- Use variables
-- Use handlers
-- Use templates
-- Configure Nginx and Linux services
-
-### Stage 3 - Application Infrastructure
-
-- Deploy web servers
-- Deploy PostgreSQL
-- Configure application stack
-- Configure firewall rules
-- Automate backups
-
-### Stage 4 - Advanced Ansible
-
-- Use Ansible Vault
-- Add idempotency validation
-- Add ansible-lint
-- Add Molecule testing basics
-- Create operational runbooks
-
-### Stage 5 - Terraform
-
-- Create Terraform project structure
-- Learn providers, resources and state
-- Create reusable modules
-- Prepare cloud-ready examples
-
-### Stage 6 - CloudFormation
-
-- Create AWS-native templates
-- Use parameters and outputs
-- Understand stacks and change sets
-- Compare with Terraform
-
-### Stage 7 - CI/CD and Final Documentation
-
-- Add GitHub Actions
-- Validate YAML and Ansible code
-- Validate Terraform code
-- Create final diagrams
-- Prepare final project summary
-
----
-
-## 13. Current Status
-
-Current project stage:
+Current limitations:
 
 ```text
-Stage 0.2 - Architecture and Hyper-V network planning
+Grafana still uses default first-login credentials until changed manually.
+No TLS is configured for internal service UIs.
+No firewall hardening is implemented yet.
+No Ansible Vault secrets are used yet.
 ```
 
-Completed:
+Planned improvements:
 
-- GitHub repository created
-- Repository topics added
-- Initial project structure created
-- Initial commit completed
-- Kali WSL selected as the automation control workstation
-- Ansible installed and verified
-- Ansible configuration file detected correctly
-- Development inventory skeleton created
+```text
+Ansible Vault for secrets
+Grafana admin password management
+firewall rules
+environment separation
+backup and restore automation
+```
 
-Next steps:
+---
 
-- Create Hyper-V internal NAT network
-- Create first Ubuntu Server VM
-- Configure SSH access
-- Run the first Ansible ping
+## 25. Current Completed Architecture State
+
+The current architecture supports:
+
+```text
+multi-node Ansible automation
+Linux baseline configuration
+web server deployment
+database server deployment
+Linux metrics collection
+Prometheus monitoring
+Grafana visualization
+Grafana dashboard provisioning
+GitHub Actions static validation
+documentation and runbooks
+```
+
+Current completed monitoring chain:
+
+```text
+web-01 / web-02 / db-01 / monitor-01
+    -> Node Exporter
+    -> Prometheus
+    -> Grafana
+    -> Enterprise Linux Overview Dashboard
+```
+
+This represents the completed monitoring layer for the current lab phase.
+
+---
+
+## 26. Future Architecture Direction
+
+Planned future architecture extensions:
+
+```text
+Advanced Ansible features
+Ansible Vault
+environment separation
+Terraform infrastructure modules
+AWS CloudFormation templates
+CI/CD improvements
+backup automation
+security hardening
+cloud deployment scenarios
+```
+
+The current local lab acts as the foundation for those future stages.
