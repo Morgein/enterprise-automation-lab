@@ -6,7 +6,7 @@
 
 **Enterprise Automation Lab** is a local infrastructure automation project built with **Kali Linux WSL**, **Hyper-V**, **Ansible**, **GitHub Actions**, and future Infrastructure as Code tooling such as **Terraform** and **AWS CloudFormation**.
 
-The project simulates a small enterprise-style Linux infrastructure environment and demonstrates how infrastructure can be configured, validated, documented, and gradually automated.
+The project simulates a small enterprise-style Linux infrastructure environment and demonstrates how infrastructure can be configured, validated, documented, monitored, and gradually automated.
 
 The main goal is to build automation skills step by step: from junior-level Ansible basics to more advanced infrastructure automation patterns.
 
@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 2.5 - PostgreSQL role for database server
+Stage 2.6 - Prometheus Node Exporter role
 ```
 
 Completed stages:
@@ -39,6 +39,7 @@ Completed stages:
 | Stage 2.3 | Nginx role for web servers | Completed |
 | Stage 2.4 | README and CI update after Nginx role | Completed |
 | Stage 2.5 | PostgreSQL role for database server | Completed |
+| Stage 2.6 | Prometheus Node Exporter role for Linux metrics | Completed |
 
 ---
 
@@ -80,22 +81,67 @@ Hyper-V Linux Nodes
     |
     ├── web-01
     │   ├── Linux baseline
-    │   └── Nginx
-    │       └── Custom Ansible-managed index.html
+    │   ├── Nginx
+    │   │   └── Custom Ansible-managed index.html
+    │   └── Node Exporter
+    │       └── http://192.168.100.11:9100/metrics
     │
     ├── web-02
     │   ├── Linux baseline
-    │   └── Nginx
-    │       └── Custom Ansible-managed index.html
+    │   ├── Nginx
+    │   │   └── Custom Ansible-managed index.html
+    │   └── Node Exporter
+    │       └── http://192.168.100.12:9100/metrics
     │
     ├── db-01
     │   ├── Linux baseline
-    │   └── PostgreSQL
-    │       └── automation_lab database
+    │   ├── PostgreSQL
+    │   │   └── automation_lab database
+    │   └── Node Exporter
+    │       └── http://192.168.100.21:9100/metrics
     │
     └── monitor-01
         ├── Linux baseline
-        └── Monitoring role planned
+        └── Node Exporter
+            └── http://192.168.100.31:9100/metrics
+```
+
+---
+
+## Monitoring Foundation
+
+The monitoring foundation currently uses **Prometheus Node Exporter**.
+
+Node Exporter is deployed to all Linux nodes and exposes system metrics on port `9100`.
+
+Current Node Exporter endpoints:
+
+| Hostname | IP Address | Metrics Endpoint |
+|---|---:|---|
+| `web-01` | `192.168.100.11` | `http://192.168.100.11:9100/metrics` |
+| `web-02` | `192.168.100.12` | `http://192.168.100.12:9100/metrics` |
+| `db-01` | `192.168.100.21` | `http://192.168.100.21:9100/metrics` |
+| `monitor-01` | `192.168.100.31` | `http://192.168.100.31:9100/metrics` |
+
+Node Exporter exposes metrics such as:
+
+```text
+CPU metrics
+memory metrics
+disk metrics
+filesystem metrics
+network metrics
+system load metrics
+boot time metrics
+```
+
+Future monitoring stages will add:
+
+```text
+Prometheus server on monitor-01
+Grafana on monitor-01
+Prometheus scrape configuration
+Grafana dashboards
 ```
 
 ---
@@ -139,6 +185,8 @@ Node IP plan:
 | Nginx | Web server role deployed to web nodes |
 | PostgreSQL | Database server deployed to `db-01` |
 | community.postgresql | Ansible collection for PostgreSQL automation |
+| Prometheus Node Exporter | Linux system metrics exporter |
+| systemd | Service management on Linux nodes |
 | yamllint | YAML syntax and formatting validation |
 | ansible-lint | Ansible best-practice validation |
 | GitHub Actions | Automated CI validation |
@@ -165,7 +213,8 @@ enterprise-automation-lab/
 │   │   ├── 01-bootstrap-linux.yml
 │   │   ├── 02-apply-linux-baseline.yml
 │   │   ├── 03-deploy-nginx.yml
-│   │   └── 04-deploy-postgresql.yml
+│   │   ├── 04-deploy-postgresql.yml
+│   │   └── 05-deploy-node-exporter.yml
 │   └── roles/
 │       ├── linux_baseline/
 │       │   ├── defaults/
@@ -178,11 +227,17 @@ enterprise-automation-lab/
 │       │   ├── meta/
 │       │   ├── tasks/
 │       │   └── templates/
-│       └── postgresql/
+│       ├── postgresql/
+│       │   ├── defaults/
+│       │   ├── handlers/
+│       │   ├── meta/
+│       │   └── tasks/
+│       └── node_exporter/
 │           ├── defaults/
 │           ├── handlers/
 │           ├── meta/
-│           └── tasks/
+│           ├── tasks/
+│           └── templates/
 │
 ├── cloudformation/
 │
@@ -245,6 +300,8 @@ The `linux` group contains all managed Linux nodes.
 The `web` group is used for Nginx deployment.
 
 The `database` group is used for PostgreSQL deployment.
+
+The `monitoring` group is reserved for monitoring services such as Prometheus and Grafana.
 
 ---
 
@@ -390,6 +447,46 @@ automation_lab
 
 ---
 
+### node_exporter
+
+Path:
+
+```text
+ansible/roles/node_exporter/
+```
+
+Purpose:
+
+```text
+Deploy Prometheus Node Exporter on all Linux nodes.
+```
+
+The role performs:
+
+- Node Exporter system group creation
+- Node Exporter system user creation
+- Node Exporter release archive download
+- archive extraction
+- binary installation to `/usr/local/bin/node_exporter`
+- systemd service deployment from a Jinja2 template
+- service enablement and startup
+- local `/metrics` endpoint validation
+- service state validation with `service_facts` and `assert`
+
+Target group:
+
+```text
+linux
+```
+
+Node Exporter exposes metrics on:
+
+```text
+0.0.0.0:9100
+```
+
+---
+
 ## Playbooks
 
 | Playbook | Purpose |
@@ -398,6 +495,7 @@ automation_lab
 | `ansible/playbooks/02-apply-linux-baseline.yml` | Apply Linux baseline role |
 | `ansible/playbooks/03-deploy-nginx.yml` | Deploy Nginx to web servers |
 | `ansible/playbooks/04-deploy-postgresql.yml` | Deploy PostgreSQL to database server |
+| `ansible/playbooks/05-deploy-node-exporter.yml` | Deploy Prometheus Node Exporter to all Linux nodes |
 
 ---
 
@@ -422,6 +520,7 @@ ansible-playbook playbooks/01-bootstrap-linux.yml --syntax-check
 ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
 ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
 ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
+ansible-playbook playbooks/05-deploy-node-exporter.yml --syntax-check
 ```
 
 ---
@@ -453,12 +552,26 @@ Deploy PostgreSQL:
 ansible-playbook playbooks/04-deploy-postgresql.yml
 ```
 
+Deploy Node Exporter:
+
+```bash
+ansible-playbook playbooks/05-deploy-node-exporter.yml
+```
+
+---
+
+### Nginx Validation
+
 Validate Nginx HTTP response from Kali WSL:
 
 ```bash
 curl -s http://192.168.100.11 | grep "Enterprise Automation Lab"
 curl -s http://192.168.100.12 | grep "Enterprise Automation Lab"
 ```
+
+---
+
+### PostgreSQL Validation
 
 Validate PostgreSQL service:
 
@@ -471,6 +584,33 @@ Validate PostgreSQL database:
 
 ```bash
 ansible database -m command -a "sudo -u postgres psql -tAc \"SELECT datname FROM pg_database WHERE datname='automation_lab';\""
+```
+
+---
+
+### Node Exporter Validation
+
+Validate Node Exporter services:
+
+```bash
+ansible linux -m command -a "systemctl is-active node_exporter"
+ansible linux -m command -a "systemctl is-enabled node_exporter"
+```
+
+Validate Node Exporter HTTP endpoints from Kali WSL:
+
+```bash
+curl -s http://192.168.100.11:9100/metrics | head
+curl -s http://192.168.100.12:9100/metrics | head
+curl -s http://192.168.100.21:9100/metrics | head
+curl -s http://192.168.100.31:9100/metrics | head
+```
+
+Expected output contains Prometheus-style metrics:
+
+```text
+# HELP
+# TYPE
 ```
 
 ---
@@ -503,6 +643,7 @@ Current playbooks checked by CI:
 02-apply-linux-baseline.yml
 03-deploy-nginx.yml
 04-deploy-postgresql.yml
+05-deploy-node-exporter.yml
 ```
 
 ---
@@ -512,20 +653,24 @@ Current playbooks checked by CI:
 The current local lab validates successfully:
 
 ```text
-Ansible ping to all nodes:        successful
-SSH key login:                    successful
-Linux baseline role:              successful
-Linux baseline idempotency:       changed=0
-Nginx role:                       successful
-Nginx idempotency:                changed=0
-Nginx HTTP response:              successful
-PostgreSQL role:                  successful
-PostgreSQL idempotency:           changed=0
-PostgreSQL service state:         active and enabled
-PostgreSQL database validation:   automation_lab exists
-yamllint:                         successful
-ansible-lint:                     successful
-GitHub Actions:                   successful after workflow validation
+Ansible ping to all nodes:          successful
+SSH key login:                      successful
+Linux baseline role:                successful
+Linux baseline idempotency:         changed=0
+Nginx role:                         successful
+Nginx idempotency:                  changed=0
+Nginx HTTP response:                successful
+PostgreSQL role:                    successful
+PostgreSQL idempotency:             changed=0
+PostgreSQL service state:           active and enabled
+PostgreSQL database validation:     automation_lab exists
+Node Exporter role:                 successful
+Node Exporter idempotency:          changed=0
+Node Exporter service state:        active and enabled
+Node Exporter metrics endpoints:    reachable on port 9100
+yamllint:                           successful
+ansible-lint:                       successful
+GitHub Actions:                     successful after workflow validation
 ```
 
 ---
@@ -549,6 +694,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-02-apply-baseline-to-all-linux-nodes.md` | Baseline role applied to all nodes |
 | `docs/runbooks/stage-02-03-nginx-role.md` | Nginx role for web servers |
 | `docs/runbooks/stage-02-05-postgresql-role.md` | PostgreSQL role for database server |
+| `docs/runbooks/stage-02-06-node-exporter-role.md` | Prometheus Node Exporter role for Linux metrics |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -569,6 +715,7 @@ docs/screenshots/stage-01-ansible-basics/
 docs/screenshots/stage-02-multi-node-automation/
 docs/screenshots/stage-02-nginx-role/
 docs/screenshots/stage-02-postgresql-role/
+docs/screenshots/stage-02-node-exporter-role/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -581,9 +728,10 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 2.6 | Monitoring role for `monitor-01` |
-| Stage 2.7 | Nginx reverse proxy or simple load balancing |
-| Stage 2.8 | PostgreSQL network access and application-style validation |
+| Stage 2.7 | Prometheus server role for `monitor-01` |
+| Stage 2.8 | Grafana role for `monitor-01` |
+| Stage 2.9 | Prometheus scrape configuration for all Node Exporter targets |
+| Stage 2.10 | Monitoring validation and dashboard screenshots |
 | Stage 3 | Advanced Ansible: templates, handlers, Vault, tags |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
@@ -606,10 +754,13 @@ This project demonstrates practical experience with:
 - Ansible collections
 - group_vars and variable separation
 - Jinja2 templates
+- systemd service management
 - idempotent automation
 - multi-node automation
 - service-specific role design
 - PostgreSQL automation
+- Linux metrics exposure with Node Exporter
+- monitoring foundation design
 - YAML linting
 - Ansible linting
 - GitHub Actions CI validation
@@ -620,11 +771,13 @@ This project demonstrates practical experience with:
 ## Current Status Summary
 
 ```text
-The project has completed the first multi-node automation phase.
+The project has completed the first multi-node automation and monitoring foundation phase.
 
 The lab can manage all Linux nodes through Ansible using SSH key authentication.
 The Linux baseline role is applied to all nodes.
 The Nginx role is applied to web servers.
 The PostgreSQL role is applied to the database server.
+The Node Exporter role is applied to all Linux nodes.
+All Linux nodes expose Prometheus-compatible metrics on port 9100.
 The project passes local linting and GitHub Actions validation.
 ```

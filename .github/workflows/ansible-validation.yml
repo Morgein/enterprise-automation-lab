@@ -68,3 +68,7 @@ jobs:
       - name: Syntax check PostgreSQL deployment playbook
         working-directory: ansible
         run: ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
+
+      - name: Syntax check Node Exporter deployment playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/05-deploy-node-exporter.yml --syntax-check

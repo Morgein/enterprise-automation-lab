@@ -1,0 +1,28 @@
+---
+# Default variables for the node_exporter role.
+# These values can be overridden by inventory group_vars or host_vars.
+
+node_exporter_version: "1.8.2"
+
+node_exporter_arch: linux-amd64
+
+node_exporter_package_name: "node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}"
+
+node_exporter_user: node_exporter
+
+node_exporter_group: node_exporter
+
+node_exporter_install_dir: /usr/local/bin
+
+node_exporter_binary_path: "{{ node_exporter_install_dir }}/node_exporter"
+
+node_exporter_download_url: >-
+  https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_package_name }}.tar.gz
+
+node_exporter_archive_path: "/tmp/{{ node_exporter_package_name }}.tar.gz"
+
+node_exporter_extract_path: "/tmp/{{ node_exporter_package_name }}"
+
+node_exporter_service_name: node_exporter
+
+node_exporter_listen_address: "0.0.0.0:9100"
