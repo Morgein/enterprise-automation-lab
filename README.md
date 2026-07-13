@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 3.5 - PostgreSQL backup and restore automation
+Current stage: Stage 3.6 - Final Ansible hardening and cleanup
 ```
 
 Completed stages:
@@ -49,6 +49,7 @@ Completed stages:
 | Stage 3.3 | Environment separation for dev and prod inventories | Completed |
 | Stage 3.4 | Preflight and post-deployment validation | Completed |
 | Stage 3.5 | PostgreSQL backup and restore automation | Completed |
+| Stage 3.6 | Final Ansible hardening and cleanup | Completed |
 ---
 
 ## Lab Architecture
@@ -1531,6 +1532,9 @@ Main documentation files:
 | `docs/runbooks/stage-03-03-environment-separation.md` | Environment separation for dev and prod inventories |
 | `docs/runbooks/stage-03-04-preflight-post-deployment-validation.md` | Preflight and post-deployment validation |
 | `docs/runbooks/stage-03-05-postgresql-backup-restore.md` | PostgreSQL backup and restore automation |
+| `docs/runbooks/stage-03-06-final-ansible-hardening.md` | Final Ansible hardening and cleanup |
+| `docs/runbooks/ansible-operations-guide.md` | Main operational guide for the Ansible workflow |
+| `docs/ansible-architecture.md` | Architecture explanation of the Ansible project |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1560,6 +1564,7 @@ docs/screenshots/stage-03-site-playbook-and-tags/
 docs/screenshots/stage-03-ansible-vault-secret-management/
 docs/screenshots/stage-03-environment-separation/
 docs/screenshots/stage-03-postgresql-backup-restore/
+docs/screenshots/stage-03-final-ansible-hardening/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1572,7 +1577,6 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 3.6 | Final Ansible hardening and cleanup |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
 | Stage 6 | CI/CD and final automation platform documentation |
@@ -1683,6 +1687,11 @@ The project applies backup retention cleanup.
 The project validates restore by restoring the latest backup into a separate validation database.
 The project verifies the restored database with a SQL query.
 Backup and restore validation are integrated into site.yml with the never tag and run only when explicitly requested.
+
+The Ansible phase is now complete.
+The project includes final Ansible operations documentation.
+The project includes final Ansible architecture documentation.
+The project includes final validation evidence for the complete Ansible workflow.
 
 
 
