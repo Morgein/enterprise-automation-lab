@@ -1,4 +1,11 @@
 ---
+- name: Run infrastructure preflight checks
+  ansible.builtin.import_playbook: 00-preflight.yml
+  tags:
+    - preflight
+    - validation
+    - stage_03
+
 - name: Apply Linux baseline
   ansible.builtin.import_playbook: 02-apply-linux-baseline.yml
   tags:
@@ -43,3 +50,10 @@
     - grafana
     - dashboards
     - stage_02
+
+- name: Run post-deployment validation
+  ansible.builtin.import_playbook: 08-post-deployment-validation.yml
+  tags:
+    - post_validation
+    - validation
+    - stage_03

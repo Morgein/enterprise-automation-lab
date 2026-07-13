@@ -1,0 +1,59 @@
+---
+- name: Run infrastructure preflight checks
+  hosts: linux
+  become: false
+  gather_facts: false
+  tags:
+    - preflight
+    - validation
+    - stage_03
+
+  pre_tasks:
+    - name: Show selected environment
+      ansible.builtin.debug:
+        msg:
+          - "Environment name: {{ environment_name | default('undefined') }}"
+          - "Environment type: {{ environment_type | default('undefined') }}"
+          - "Environment network: {{ environment_network_cidr | default('undefined') }}"
+      run_once: true
+
+    - name: Validate required environment variables
+      ansible.builtin.assert:
+        that:
+          - environment_name is defined
+          - environment_type is defined
+          - environment_network_cidr is defined
+        success_msg: "Required environment variables are defined"
+        fail_msg: "One or more required environment variables are missing"
+      run_once: true
+
+    - name: Validate required inventory groups
+      ansible.builtin.assert:
+        that:
+          - groups['web'] | default([]) | length > 0
+          - groups['database'] | default([]) | length > 0
+          - groups['monitoring'] | default([]) | length > 0
+          - groups['linux'] | default([]) | length > 0
+        success_msg: "Required inventory groups are present"
+        fail_msg: "One or more required inventory groups are missing"
+      run_once: true
+
+  tasks:
+    - name: Validate SSH connectivity to Linux hosts
+      ansible.builtin.ping:
+
+    - name: Validate automation user variable
+      ansible.builtin.assert:
+        that:
+          - ansible_user is defined
+        success_msg: "Ansible user is defined for this host"
+        fail_msg: "ansible_user is not defined for this host"
+
+    - name: Validate passwordless sudo access
+      ansible.builtin.command: sudo -n true
+      changed_when: false
+
+  post_tasks:
+    - name: Show preflight completion message
+      ansible.builtin.debug:
+        msg: "Preflight checks completed successfully for {{ inventory_hostname }}"

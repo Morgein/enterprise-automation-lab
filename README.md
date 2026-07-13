@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 3.3 - Environment separation for dev and prod inventories
+Stage 3.4 - Preflight and post-deployment validation
 ```
 
 Completed stages:
@@ -46,6 +46,8 @@ Completed stages:
 | Stage 2.10 | Monitoring stack final validation | Completed |
 | Stage 3.1 | Site playbook and operational tags | Completed |
 | Stage 3.2 | Ansible Vault secret management | Completed |
+| Stage 3.3 | Environment separation for dev and prod inventories | Completed |
+| Stage 3.4 | Preflight and post-deployment validation | Completed |
 ---
 
 ## Lab Architecture
@@ -329,13 +331,15 @@ enterprise-automation-lab/
 │   │           └── monitoring.yml
 │   ├── playbooks/
 │   │   ├── site.yml
+│   │   ├── 00-preflight.yml
 │   │   ├── 01-bootstrap-linux.yml
 │   │   ├── 02-apply-linux-baseline.yml
 │   │   ├── 03-deploy-nginx.yml
 │   │   ├── 04-deploy-postgresql.yml
 │   │   ├── 05-deploy-node-exporter.yml
 │   │   ├── 06-deploy-prometheus.yml
-│   │   └── 07-deploy-grafana.yml
+│   │   ├── 07-deploy-grafana.yml
+│   │   └── 08-post-deployment-validation.yml
 │   └── roles/
 │       ├── linux_baseline/
 │       │   ├── defaults/
@@ -755,6 +759,7 @@ http://127.0.0.1:9090
 | Playbook | Purpose |
 |---|---|
 | `ansible/playbooks/site.yml` | Main operational playbook that imports the current infrastructure stack |
+| `ansible/playbooks/00-preflight.yml` | Validates inventory, environment variables, SSH and sudo before deployment |
 | `ansible/playbooks/01-bootstrap-linux.yml` | Initial bootstrap playbook |
 | `ansible/playbooks/02-apply-linux-baseline.yml` | Apply Linux baseline role |
 | `ansible/playbooks/03-deploy-nginx.yml` | Deploy Nginx to web servers |
@@ -762,6 +767,7 @@ http://127.0.0.1:9090
 | `ansible/playbooks/05-deploy-node-exporter.yml` | Deploy Prometheus Node Exporter to all Linux nodes |
 | `ansible/playbooks/06-deploy-prometheus.yml` | Deploy Prometheus server to the monitoring node |
 | `ansible/playbooks/07-deploy-grafana.yml` | Deploy Grafana and provision dashboards on the monitoring node |
+| `ansible/playbooks/08-post-deployment-validation.yml` | Validates services and endpoints after deployment |
 
 ---
 
@@ -928,6 +934,52 @@ different secrets
 different environments
 ```
 ---
+## Preflight and Post-deployment Validation
+
+The project now includes a safer operational workflow:
+
+```text
+preflight -> deployment -> post-deployment validation
+```
+
+The preflight playbook validates:
+
+```text
+environment variables
+required inventory groups
+SSH connectivity
+Ansible user variable
+passwordless sudo access
+```
+
+The post-deployment validation playbook validates:
+
+```text
+Node Exporter service and metrics endpoint
+Nginx HTTP response and page content
+PostgreSQL service unit and automation_lab database through SQL query
+Prometheus service and readiness endpoint
+Grafana service and health endpoint
+```
+
+The main site playbook now imports both validation playbooks:
+
+```text
+00-preflight.yml
+08-post-deployment-validation.yml
+```
+
+Useful operational commands:
+
+```bash
+ansible-playbook playbooks/site.yml --tags preflight
+ansible-playbook playbooks/site.yml --tags post_validation
+ansible-playbook playbooks/site.yml --tags validation
+```
+
+This makes the automation workflow closer to production-style infrastructure operations.
+---
+
 ## Validation
 
 The project includes local and automated validation.
@@ -1052,6 +1104,18 @@ Validate site playbook against both inventories:
 ```bash
 ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
 ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
+```
+Validate preflight and post-deployment playbooks:
+
+```bash
+cd ansible
+
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+
+ansible-playbook playbooks/00-preflight.yml --syntax-check
+ansible-playbook playbooks/08-post-deployment-validation.yml --syntax-check
+ansible-playbook playbooks/site.yml --tags preflight
+ansible-playbook playbooks/site.yml --tags post_validation
 ```
 
 ---
@@ -1265,6 +1329,7 @@ site.yml
 site.yml with default/dev inventory
 site.yml with explicit dev inventory
 site.yml with prod inventory
+00-preflight.yml
 01-bootstrap-linux.yml
 02-apply-linux-baseline.yml
 03-deploy-nginx.yml
@@ -1272,6 +1337,7 @@ site.yml with prod inventory
 05-deploy-node-exporter.yml
 06-deploy-prometheus.yml
 07-deploy-grafana.yml
+08-post-deployment-validation.yml
 ```
 
 ---
@@ -1360,6 +1426,7 @@ Main documentation files:
 | `docs/runbooks/stage-03-01-site-playbook-and-tags.md` | Site playbook and operational tags |
 | `docs/runbooks/stage-03-02-ansible-vault-secret-management.md` | Ansible Vault secret management |
 | `docs/runbooks/stage-03-03-environment-separation.md` | Environment separation for dev and prod inventories |
+| `docs/runbooks/stage-03-04-preflight-post-deployment-validation.md` | Preflight and post-deployment validation |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1400,7 +1467,7 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 3.4 | Advanced handlers, pre_tasks and post_tasks |
+| Stage 3.5 | Backup and restore automation |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
 | Stage 6 | CI/CD and final automation platform documentation |
@@ -1413,6 +1480,12 @@ This project demonstrates practical experience with:
 
 - Ansible Vault secret management
 - Ansible environment separation
+- Ansible pre_tasks and post_tasks
+- preflight infrastructure checks
+- post-deployment validation
+- operational validation tags
+- production-style deployment workflow
+- service validation with Ansible modules
 - dev and prod inventory design
 - inventory-specific group_vars
 - production-like inventory templates
@@ -1484,5 +1557,12 @@ The prod inventory is a production-like template for future expansion.
 The same site.yml playbook can be syntax-checked against both inventories.
 Environment-specific variables are separated through inventory group_vars.
 Prometheus targets are now environment-specific.
+
+The project now includes preflight checks before deployment.
+The project now includes post-deployment validation after deployment.
+The main site.yml workflow follows preflight -> deployment -> validation.
+SSH connectivity, sudo access, inventory groups and environment variables are validated before deployment.
+Node Exporter, Nginx, PostgreSQL, Prometheus and Grafana are validated after deployment.
+PostgreSQL validation uses a real SQL query through the community.postgresql collection.
 
 ```

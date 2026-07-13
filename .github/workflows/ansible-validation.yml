@@ -92,3 +92,11 @@ jobs:
       - name: Syntax check site playbook with prod inventory
         working-directory: ansible
         run: ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
+
+      - name: Syntax check preflight playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/00-preflight.yml --syntax-check
+
+      - name: Syntax check post-deployment validation playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/08-post-deployment-validation.yml --syntax-check
