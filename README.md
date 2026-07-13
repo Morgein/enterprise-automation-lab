@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 3.4 - Preflight and post-deployment validation
+Stage 3.5 - PostgreSQL backup and restore automation
 ```
 
 Completed stages:
@@ -48,6 +48,7 @@ Completed stages:
 | Stage 3.2 | Ansible Vault secret management | Completed |
 | Stage 3.3 | Environment separation for dev and prod inventories | Completed |
 | Stage 3.4 | Preflight and post-deployment validation | Completed |
+| Stage 3.5 | PostgreSQL backup and restore automation | Completed |
 ---
 
 ## Lab Architecture
@@ -339,7 +340,9 @@ enterprise-automation-lab/
 │   │   ├── 05-deploy-node-exporter.yml
 │   │   ├── 06-deploy-prometheus.yml
 │   │   ├── 07-deploy-grafana.yml
-│   │   └── 08-post-deployment-validation.yml
+│   │   ├── 08-post-deployment-validation.yml
+│   │   ├── 09-backup-postgresql.yml
+│   │   └── 10-restore-postgresql-validation.yml
 │   └── roles/
 │       ├── linux_baseline/
 │       │   ├── defaults/
@@ -353,6 +356,11 @@ enterprise-automation-lab/
 │       │   ├── tasks/
 │       │   └── templates/
 │       ├── postgresql/
+│       │   ├── defaults/
+│       │   ├── handlers/
+│       │   ├── meta/
+│       │   └── tasks/
+│       ├── postgresql_backup/
 │       │   ├── defaults/
 │       │   ├── handlers/
 │       │   ├── meta/
@@ -768,6 +776,8 @@ http://127.0.0.1:9090
 | `ansible/playbooks/06-deploy-prometheus.yml` | Deploy Prometheus server to the monitoring node |
 | `ansible/playbooks/07-deploy-grafana.yml` | Deploy Grafana and provision dashboards on the monitoring node |
 | `ansible/playbooks/08-post-deployment-validation.yml` | Validates services and endpoints after deployment |
+| `ansible/playbooks/09-backup-postgresql.yml` | Creates timestamped PostgreSQL backups and manages backup retention |
+| `ansible/playbooks/10-restore-postgresql-validation.yml` | Restores the latest PostgreSQL backup into a validation database and verifies SQL access |
 
 ---
 
@@ -980,6 +990,73 @@ ansible-playbook playbooks/site.yml --tags validation
 This makes the automation workflow closer to production-style infrastructure operations.
 ---
 
+## PostgreSQL Backup and Restore Automation
+
+The project now includes PostgreSQL backup and restore validation automation.
+
+The backup workflow creates timestamped SQL dump files from the `automation_lab` database.
+
+The restore validation workflow restores the latest backup into a separate validation database and verifies that the restored database accepts SQL queries.
+
+Backup workflow:
+
+```text
+create backup directory
+run pg_dump
+validate backup file exists
+validate backup file is not empty
+update latest.sql symlink
+clean old backups according to retention policy
+```
+
+Restore validation workflow:
+
+```text
+validate latest.sql exists
+drop restore validation database if it exists
+create restore validation database
+restore latest backup into validation database
+run SQL query against restored database
+verify restored database is queryable
+```
+
+Backup and restore validation are integrated into `site.yml` with the `never` tag.
+
+This prevents backup and restore operations from running during a normal deployment.
+
+Manual backup command:
+
+```bash
+ansible-playbook playbooks/site.yml --tags backup
+```
+
+Manual restore validation command:
+
+```bash
+ansible-playbook playbooks/site.yml --tags restore_validation
+```
+
+The backup files are stored on the database server under:
+
+```text
+/var/backups/postgresql/automation_lab
+```
+
+The latest backup is available through:
+
+```text
+/var/backups/postgresql/automation_lab/latest.sql
+```
+
+The restore validation database is:
+
+```text
+automation_lab_restore_validation
+```
+
+This proves that backups are not only created, but can also be restored successfully.
+---
+
 ## Validation
 
 The project includes local and automated validation.
@@ -1118,6 +1195,30 @@ ansible-playbook playbooks/site.yml --tags preflight
 ansible-playbook playbooks/site.yml --tags post_validation
 ```
 
+Validate PostgreSQL backup and restore automation:
+
+```bash
+cd ansible
+
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+
+ansible-playbook playbooks/09-backup-postgresql.yml --syntax-check
+ansible-playbook playbooks/10-restore-postgresql-validation.yml --syntax-check
+ansible-playbook playbooks/site.yml --tags backup
+ansible-playbook playbooks/site.yml --tags restore_validation
+```
+
+Check backup files:
+
+```bash
+ansible database -m command -a "ls -lah /var/backups/postgresql/automation_lab"
+```
+
+Check restore validation database:
+
+```bash
+ansible database -m command -a "sudo -u postgres psql -tAc \"SELECT datname FROM pg_database WHERE datname='automation_lab_restore_validation';\""
+```
 ---
 
 ### Nginx Validation
@@ -1338,6 +1439,8 @@ site.yml with prod inventory
 06-deploy-prometheus.yml
 07-deploy-grafana.yml
 08-post-deployment-validation.yml
+09-backup-postgresql.yml
+10-restore-postgresql-validation.yml
 ```
 
 ---
@@ -1427,6 +1530,7 @@ Main documentation files:
 | `docs/runbooks/stage-03-02-ansible-vault-secret-management.md` | Ansible Vault secret management |
 | `docs/runbooks/stage-03-03-environment-separation.md` | Environment separation for dev and prod inventories |
 | `docs/runbooks/stage-03-04-preflight-post-deployment-validation.md` | Preflight and post-deployment validation |
+| `docs/runbooks/stage-03-05-postgresql-backup-restore.md` | PostgreSQL backup and restore automation |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1455,6 +1559,7 @@ docs/screenshots/stage-02-monitoring-final-validation/
 docs/screenshots/stage-03-site-playbook-and-tags/
 docs/screenshots/stage-03-ansible-vault-secret-management/
 docs/screenshots/stage-03-environment-separation/
+docs/screenshots/stage-03-postgresql-backup-restore/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1467,7 +1572,7 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 3.5 | Backup and restore automation |
+| Stage 3.6 | Final Ansible hardening and cleanup |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
 | Stage 6 | CI/CD and final automation platform documentation |
@@ -1517,6 +1622,13 @@ This project demonstrates practical experience with:
 - Grafana data source provisioning
 - Grafana dashboard provisioning
 - PromQL dashboard panels
+- PostgreSQL backup automation with Ansible
+- timestamped database dumps
+- latest backup symlink management
+- backup retention policy
+- restore validation into a separate database
+- safe manual operational tags with `never`
+- validation of backup usability, not only backup creation
 - monitoring foundation design
 - YAML linting
 - Ansible linting
@@ -1564,5 +1676,14 @@ The main site.yml workflow follows preflight -> deployment -> validation.
 SSH connectivity, sudo access, inventory groups and environment variables are validated before deployment.
 Node Exporter, Nginx, PostgreSQL, Prometheus and Grafana are validated after deployment.
 PostgreSQL validation uses a real SQL query through the community.postgresql collection.
+The project now includes PostgreSQL backup automation.
+The project now creates timestamped SQL dump files.
+The project maintains a latest.sql symlink for the newest backup.
+The project applies backup retention cleanup.
+The project validates restore by restoring the latest backup into a separate validation database.
+The project verifies the restored database with a SQL query.
+Backup and restore validation are integrated into site.yml with the never tag and run only when explicitly requested.
+
+
 
 ```

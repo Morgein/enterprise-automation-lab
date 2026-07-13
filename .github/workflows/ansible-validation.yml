@@ -100,3 +100,11 @@ jobs:
       - name: Syntax check post-deployment validation playbook
         working-directory: ansible
         run: ansible-playbook playbooks/08-post-deployment-validation.yml --syntax-check
+
+      - name: Syntax check PostgreSQL backup playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/09-backup-postgresql.yml --syntax-check
+
+      - name: Syntax check PostgreSQL restore validation playbook
+        working-directory: ansible
+        run: ansible-playbook playbooks/10-restore-postgresql-validation.yml --syntax-check

@@ -1,0 +1,81 @@
+---
+- name: Ensure PostgreSQL backup directory exists
+  ansible.builtin.file:
+    path: "{{ postgresql_backup_dir }}"
+    state: directory
+    owner: "{{ postgresql_backup_owner }}"
+    group: "{{ postgresql_backup_group }}"
+    mode: "{{ postgresql_backup_mode }}"
+
+- name: Create PostgreSQL database backup
+  ansible.builtin.command:
+    argv:
+      - pg_dump
+      - "--format=plain"
+      - "--clean"
+      - "--if-exists"
+      - "--dbname={{ postgresql_backup_database }}"
+      - "--file={{ postgresql_backup_file }}"
+  become: true
+  become_user: postgres
+  changed_when: true
+
+- name: Ensure backup file ownership and permissions
+  ansible.builtin.file:
+    path: "{{ postgresql_backup_file }}"
+    state: file
+    owner: "{{ postgresql_backup_owner }}"
+    group: "{{ postgresql_backup_group }}"
+    mode: "{{ postgresql_backup_file_mode }}"
+
+- name: Validate backup file exists
+  ansible.builtin.stat:
+    path: "{{ postgresql_backup_file }}"
+  register: postgresql_backup_file_stat
+
+- name: Assert backup file is present and not empty
+  ansible.builtin.assert:
+    that:
+      - postgresql_backup_file_stat.stat.exists
+      - postgresql_backup_file_stat.stat.size > 0
+    success_msg: "PostgreSQL backup file exists and is not empty"
+    fail_msg: "PostgreSQL backup file is missing or empty"
+
+- name: Update latest PostgreSQL backup symlink
+  ansible.builtin.file:
+    src: "{{ postgresql_backup_file }}"
+    dest: "{{ postgresql_backup_latest_symlink }}"
+    state: link
+    owner: "{{ postgresql_backup_owner }}"
+    group: "{{ postgresql_backup_group }}"
+    force: true
+
+- name: Find PostgreSQL backup files
+  ansible.builtin.find:
+    paths: "{{ postgresql_backup_dir }}"
+    patterns: "{{ postgresql_backup_database }}-*.sql"
+    file_type: file
+  register: postgresql_backup_find_result
+
+- name: Sort PostgreSQL backup files by modification time
+  ansible.builtin.set_fact:
+    postgresql_backup_files_sorted: >-
+      {{ postgresql_backup_find_result.files | sort(attribute='mtime', reverse=true) }}
+
+- name: Remove old PostgreSQL backup files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ postgresql_backup_files_sorted }}"
+  loop_control:
+    index_var: postgresql_backup_file_index
+    label: "{{ item.path }}"
+  when: postgresql_backup_file_index >= (postgresql_backup_retention_count | int)
+
+- name: Show PostgreSQL backup summary
+  ansible.builtin.debug:
+    msg:
+      - "Backup database: {{ postgresql_backup_database }}"
+      - "Backup file: {{ postgresql_backup_file }}"
+      - "Latest symlink: {{ postgresql_backup_latest_symlink }}"
+      - "Backup retention count: {{ postgresql_backup_retention_count }}"

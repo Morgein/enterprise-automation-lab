@@ -5,3 +5,11 @@ postgresql_databases:
   - automation_lab
 
 postgresql_users: "{{ vault_postgresql_users | default([]) }}"
+
+postgresql_backup_database: automation_lab
+
+postgresql_backup_retention_count: 5
+
+postgresql_backup_restore_validation_database: automation_lab_restore_validation
+
+postgresql_backup_keep_restore_validation_database: true

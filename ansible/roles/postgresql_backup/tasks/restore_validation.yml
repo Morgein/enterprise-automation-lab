@@ -1,0 +1,72 @@
+---
+- name: Validate latest PostgreSQL backup symlink exists
+  ansible.builtin.stat:
+    path: "{{ postgresql_backup_latest_symlink }}"
+  register: postgresql_backup_latest_stat
+
+- name: Assert latest PostgreSQL backup symlink exists
+  ansible.builtin.assert:
+    that:
+      - postgresql_backup_latest_stat.stat.exists
+      - postgresql_backup_latest_stat.stat.size > 0
+    success_msg: "Latest PostgreSQL backup exists and can be used for restore validation"
+    fail_msg: "Latest PostgreSQL backup does not exist or is empty"
+
+- name: Drop restore validation database if it exists
+  community.postgresql.postgresql_db:
+    name: "{{ postgresql_backup_restore_validation_database }}"
+    state: absent
+  become: true
+  become_user: postgres
+
+- name: Create restore validation database
+  community.postgresql.postgresql_db:
+    name: "{{ postgresql_backup_restore_validation_database }}"
+    state: present
+  become: true
+  become_user: postgres
+
+- name: Restore latest PostgreSQL backup into validation database
+  ansible.builtin.command:
+    argv:
+      - psql
+      - "--dbname={{ postgresql_backup_restore_validation_database }}"
+      - "--file={{ postgresql_backup_latest_symlink }}"
+  become: true
+  become_user: postgres
+  changed_when: true
+
+- name: Validate restored database accepts SQL queries
+  community.postgresql.postgresql_query:
+    login_db: "{{ postgresql_backup_restore_validation_database }}"
+    query: "SELECT current_database() AS restored_database;"
+  become: true
+  become_user: postgres
+  register: postgresql_backup_restore_validation_query_result
+  changed_when: false
+
+- name: Assert restore validation database is queryable
+  ansible.builtin.assert:
+    that:
+      - >-
+        postgresql_backup_restore_validation_query_result.query_result
+        | selectattr('restored_database', 'equalto', postgresql_backup_restore_validation_database)
+        | list
+        | length > 0
+    success_msg: "Restore validation database is queryable"
+    fail_msg: "Restore validation database query failed"
+
+- name: Remove restore validation database
+  community.postgresql.postgresql_db:
+    name: "{{ postgresql_backup_restore_validation_database }}"
+    state: absent
+  become: true
+  become_user: postgres
+  when: not postgresql_backup_keep_restore_validation_database | bool
+
+- name: Show PostgreSQL restore validation summary
+  ansible.builtin.debug:
+    msg:
+      - "Backup source: {{ postgresql_backup_latest_symlink }}"
+      - "Restore validation database: {{ postgresql_backup_restore_validation_database }}"
+      - "Restore validation completed successfully"

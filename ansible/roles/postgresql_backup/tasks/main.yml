@@ -1,0 +1,15 @@
+---
+- name: Validate PostgreSQL backup operation
+  ansible.builtin.assert:
+    that:
+      - postgresql_backup_operation in ['backup', 'restore_validation']
+    success_msg: "PostgreSQL backup operation is valid"
+    fail_msg: "postgresql_backup_operation must be backup or restore_validation"
+
+- name: Run PostgreSQL backup tasks
+  ansible.builtin.include_tasks: backup.yml
+  when: postgresql_backup_operation == 'backup'
+
+- name: Run PostgreSQL restore validation tasks
+  ansible.builtin.include_tasks: restore_validation.yml
+  when: postgresql_backup_operation == 'restore_validation'

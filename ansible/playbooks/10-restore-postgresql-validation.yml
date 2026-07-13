@@ -1,0 +1,22 @@
+---
+- name: Validate PostgreSQL restore from latest backup
+  hosts: database
+  become: true
+  gather_facts: true
+  tags:
+    - restore
+    - restore_validation
+    - database
+    - postgresql
+    - stage_03
+
+  vars:
+    postgresql_backup_operation: restore_validation
+
+  roles:
+    - role: postgresql_backup
+      tags:
+        - restore
+        - restore_validation
+        - database
+        - postgresql

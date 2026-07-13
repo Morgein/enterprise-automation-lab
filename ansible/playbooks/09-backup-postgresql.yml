@@ -1,0 +1,20 @@
+---
+- name: Backup PostgreSQL database
+  hosts: database
+  become: true
+  gather_facts: true
+  tags:
+    - backup
+    - database
+    - postgresql
+    - stage_03
+
+  vars:
+    postgresql_backup_operation: backup
+
+  roles:
+    - role: postgresql_backup
+      tags:
+        - backup
+        - database
+        - postgresql

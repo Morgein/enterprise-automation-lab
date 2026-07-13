@@ -1,0 +1,29 @@
+---
+# Default variables for the postgresql_backup role.
+# These values can be overridden by inventory group_vars or host_vars.
+
+postgresql_backup_operation: backup
+
+postgresql_backup_database: automation_lab
+
+postgresql_backup_dir: /var/backups/postgresql/automation_lab
+
+postgresql_backup_owner: postgres
+
+postgresql_backup_group: postgres
+
+postgresql_backup_mode: "0750"
+
+postgresql_backup_file_mode: "0640"
+
+postgresql_backup_timestamp: "{{ ansible_facts['date_time']['iso8601_basic_short'] }}"
+
+postgresql_backup_file: "{{ postgresql_backup_dir }}/{{ postgresql_backup_database }}-{{ postgresql_backup_timestamp }}.sql"
+
+postgresql_backup_latest_symlink: "{{ postgresql_backup_dir }}/latest.sql"
+
+postgresql_backup_retention_count: 5
+
+postgresql_backup_restore_validation_database: automation_lab_restore_validation
+
+postgresql_backup_keep_restore_validation_database: true

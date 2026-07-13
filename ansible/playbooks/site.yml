@@ -57,3 +57,22 @@
     - post_validation
     - validation
     - stage_03
+
+- name: Backup PostgreSQL database
+  ansible.builtin.import_playbook: 09-backup-postgresql.yml
+  tags:
+    - never
+    - backup
+    - database
+    - postgresql
+    - stage_03
+
+- name: Validate PostgreSQL restore from latest backup
+  ansible.builtin.import_playbook: 10-restore-postgresql-validation.yml
+  tags:
+    - never
+    - restore
+    - restore_validation
+    - database
+    - postgresql
+    - stage_03

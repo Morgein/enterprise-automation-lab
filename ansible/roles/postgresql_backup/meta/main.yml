@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  author: Morgein
+  description: PostgreSQL backup and restore validation role for the Enterprise Automation Lab
+  company: Personal Lab
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+        - jammy
+
+  galaxy_tags:
+    - postgresql
+    - backup
+    - restore
+    - database
+    - automation
+
+dependencies: []
