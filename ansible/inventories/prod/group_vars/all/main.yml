@@ -1,0 +1,10 @@
+---
+# Common variables for the production-like environment.
+
+environment_name: prod
+
+environment_description: Production-like inventory template
+
+environment_network_cidr: 10.20.10.0/24
+
+environment_type: production_template

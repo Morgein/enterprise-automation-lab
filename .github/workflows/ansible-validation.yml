@@ -84,3 +84,11 @@ jobs:
       - name: Syntax check site playbook
         working-directory: ansible
         run: ansible-playbook playbooks/site.yml --syntax-check
+
+      - name: Syntax check site playbook with dev inventory
+        working-directory: ansible
+        run: ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
+
+      - name: Syntax check site playbook with prod inventory
+        working-directory: ansible
+        run: ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check

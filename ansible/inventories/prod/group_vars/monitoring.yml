@@ -1,0 +1,14 @@
+---
+# Variables for monitoring hosts in the production-like inventory.
+
+prometheus_node_exporter_targets:
+  - "10.20.10.11:9100"
+  - "10.20.10.12:9100"
+  - "10.20.10.21:9100"
+  - "10.20.10.31:9100"
+
+grafana_manage_admin_password: "{{ vault_grafana_admin_password is defined }}"
+
+grafana_admin_user: "{{ vault_grafana_admin_user | default('admin') }}"
+
+grafana_admin_password: "{{ vault_grafana_admin_password | default('') }}"

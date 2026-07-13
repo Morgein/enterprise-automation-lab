@@ -38,3 +38,4 @@ secrets/
 # Ansible Vault local secrets
 ansible/.vault_pass.txt
 ansible/inventories/dev/group_vars/all/vault.yml
+ansible/inventories/prod/group_vars/all/vault.yml

@@ -38,3 +38,4 @@ ignore: |
   README.md
   docs/**/*.md
   ansible/inventories/dev/group_vars/all/vault.yml
+  ansible/inventories/prod/group_vars/all/vault.yml

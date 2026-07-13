@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 3.2 - Ansible Vault secret management
+Stage 3.3 - Environment separation for dev and prod inventories
 ```
 
 Completed stages:
@@ -311,9 +311,19 @@ enterprise-automation-lab/
 │   ├── examples/
 │   │   └── vault.yml.example
 │   ├── inventories/
-│   │   └── dev/
+│   │   ├── dev/
+│   │   │   ├── hosts.ini
+│   │   │   └── group_vars/
+│   │   │       ├── all/
+│   │   │       │   └── main.yml
+│   │   │       ├── database.yml
+│   │   │       ├── linux.yml
+│   │   │       └── monitoring.yml
+│   │   └── prod/
 │   │       ├── hosts.ini
 │   │       └── group_vars/
+│   │           ├── all/
+│   │           │   └── main.yml
 │   │           ├── database.yml
 │   │           ├── linux.yml
 │   │           └── monitoring.yml
@@ -860,7 +870,64 @@ export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
 
 The real Vault file and Vault password file must never be committed to GitHub.
 ---
+## Environment Separation
 
+The project now supports separate Ansible inventories for development and production-like environments.
+
+Current environments:
+
+```text
+ansible/inventories/dev/
+ansible/inventories/prod/
+```
+
+The `dev` inventory represents the real local Hyper-V lab:
+
+```text
+192.168.100.0/24
+```
+
+The `prod` inventory is a production-like template:
+
+```text
+10.20.10.0/24
+```
+
+The same roles and playbooks can be validated against both inventories.
+
+Development syntax check:
+
+```bash
+ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
+```
+
+Production-like syntax check:
+
+```bash
+ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
+```
+
+The production-like inventory is not currently used for runtime deployment.
+
+It is used for:
+
+```text
+inventory structure validation
+environment variable separation
+production-style documentation
+future expansion
+```
+
+This stage demonstrates the Ansible pattern:
+
+```text
+same automation code
+different inventories
+different variables
+different secrets
+different environments
+```
+---
 ## Validation
 
 The project includes local and automated validation.
@@ -964,6 +1031,29 @@ List available operational tags:
 ```bash
 ansible-playbook playbooks/site.yml --list-tags
 ```
+Validate inventory graphs:
+
+```bash
+cd ansible
+ansible-inventory -i inventories/dev/hosts.ini --graph
+ansible-inventory -i inventories/prod/hosts.ini --graph
+```
+
+GitHub Vault Validation:
+```bash
+cd ansible
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+ansible-playbook playbooks/site.yml --syntax-check
+ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
+ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check
+```
+
+Validate site playbook against both inventories:
+```bash
+ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
+ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
+```
+
 ---
 
 ### Nginx Validation
@@ -1145,14 +1235,7 @@ Expected result:
 for healthy scrape targets.
 
 ---
-## GitHub Vault Validation:
-```bash
-cd ansible
-export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
-ansible-playbook playbooks/site.yml --syntax-check
-ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
-ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check
-```
+
 
 ## GitHub Actions Validation
 
@@ -1179,6 +1262,9 @@ Current playbooks checked by CI:
 
 ```text
 site.yml
+site.yml with default/dev inventory
+site.yml with explicit dev inventory
+site.yml with prod inventory
 01-bootstrap-linux.yml
 02-apply-linux-baseline.yml
 03-deploy-nginx.yml
@@ -1273,6 +1359,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-10-monitoring-final-validation.md` | Monitoring stack final validation |
 | `docs/runbooks/stage-03-01-site-playbook-and-tags.md` | Site playbook and operational tags |
 | `docs/runbooks/stage-03-02-ansible-vault-secret-management.md` | Ansible Vault secret management |
+| `docs/runbooks/stage-03-03-environment-separation.md` | Environment separation for dev and prod inventories |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1300,6 +1387,7 @@ docs/screenshots/stage-02-grafana-dashboard-provisioning/
 docs/screenshots/stage-02-monitoring-final-validation/
 docs/screenshots/stage-03-site-playbook-and-tags/
 docs/screenshots/stage-03-ansible-vault-secret-management/
+docs/screenshots/stage-03-environment-separation/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1312,7 +1400,6 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 3.3 | Environment separation for dev and prod inventories |
 | Stage 3.4 | Advanced handlers, pre_tasks and post_tasks |
 | Stage 4 | Terraform foundations |
 | Stage 5 | CloudFormation foundations |
@@ -1325,6 +1412,11 @@ Planned next stages:
 This project demonstrates practical experience with:
 
 - Ansible Vault secret management
+- Ansible environment separation
+- dev and prod inventory design
+- inventory-specific group_vars
+- production-like inventory templates
+- environment-specific monitoring targets
 - encrypted local secrets
 - safe Vault example files
 - no_log usage for sensitive tasks
@@ -1386,12 +1478,11 @@ The project passes local linting and GitHub Actions validation.
 The project now includes a central site.yml playbook.
 The full infrastructure stack can be deployed through one main Ansible entrypoint.
 Operational tags allow selective execution of baseline, web, database, monitoring, Grafana and dashboard automation.
-The project supports both individual playbook execution and central site playbook execution.
-The project now uses Ansible Vault for local secret management.
-PostgreSQL application user credentials are managed through Vault.
-Grafana admin credentials are managed through Vault.
-Real secret files are encrypted locally and excluded from Git.
-The repository contains only safe secret examples.
-Sensitive Ansible tasks hide credentials using no_log.
+The project now supports separate dev and prod Ansible inventories.
+The dev inventory represents the real local Hyper-V lab.
+The prod inventory is a production-like template for future expansion.
+The same site.yml playbook can be syntax-checked against both inventories.
+Environment-specific variables are separated through inventory group_vars.
+Prometheus targets are now environment-specific.
 
 ```

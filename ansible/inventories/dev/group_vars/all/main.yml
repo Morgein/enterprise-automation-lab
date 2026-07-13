@@ -1,0 +1,10 @@
+---
+# Common variables for the development environment.
+
+environment_name: dev
+
+environment_description: Local Hyper-V development lab
+
+environment_network_cidr: 192.168.100.0/24
+
+environment_type: local_lab
