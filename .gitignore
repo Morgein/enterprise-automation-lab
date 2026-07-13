@@ -34,3 +34,7 @@ ansible/vault-password.txt
 *.crt
 *.env
 secrets/
+
+# Ansible Vault local secrets
+ansible/.vault_pass.txt
+ansible/inventories/dev/group_vars/all/vault.yml

@@ -3,3 +3,5 @@
 
 postgresql_databases:
   - automation_lab
+
+postgresql_users: "{{ vault_postgresql_users | default([]) }}"

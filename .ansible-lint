@@ -9,6 +9,8 @@ exclude_paths:
   - ansible/collections/
   - collections/
   - terraform/.terraform/
+  - ansible/inventories/dev/group_vars/all/vault.yml
+  - inventories/dev/group_vars/all/vault.yml
 
 warn_list:
   - experimental

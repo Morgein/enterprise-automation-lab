@@ -12,3 +12,5 @@ postgresql_service_name: postgresql
 
 postgresql_databases:
   - automation_lab
+
+postgresql_users: []

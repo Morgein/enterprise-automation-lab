@@ -37,3 +37,4 @@ ignore: |
   *.md
   README.md
   docs/**/*.md
+  ansible/inventories/dev/group_vars/all/vault.yml

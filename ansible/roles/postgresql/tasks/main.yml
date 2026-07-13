@@ -19,6 +19,22 @@
   become_user: postgres
   loop: "{{ postgresql_databases }}"
 
+- name: Create PostgreSQL users from Vault
+  community.postgresql.postgresql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    state: present
+  become: true
+  become_user: postgres
+  loop: "{{ postgresql_users }}"
+  no_log: true
+  when: postgresql_users | length > 0
+
+- name: Show managed PostgreSQL users
+  ansible.builtin.debug:
+    msg: "Managed PostgreSQL users: {{ postgresql_users | map(attribute='name') | list }}"
+  when: postgresql_users | length > 0
+
 - name: Validate PostgreSQL version
   ansible.builtin.command: psql --version
   register: postgresql_version_result

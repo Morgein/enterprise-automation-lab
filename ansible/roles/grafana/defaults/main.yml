@@ -40,6 +40,14 @@ grafana_dashboard_folder_name: Enterprise Automation Lab
 
 grafana_linux_overview_dashboard_title: Enterprise Linux Overview
 
+grafana_manage_admin_password: false
+
+grafana_admin_user: admin
+
+grafana_admin_password: ""
+
+grafana_admin_api_url: "http://127.0.0.1:{{ grafana_http_port }}/api/org"
+
 grafana_http_port: 3000
 
 grafana_health_url: "http://127.0.0.1:{{ grafana_http_port }}/api/health"

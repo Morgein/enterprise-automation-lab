@@ -17,7 +17,7 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Stage 3.1 - Site playbook and operational tags
+Stage 3.2 - Ansible Vault secret management
 ```
 
 Completed stages:
@@ -45,6 +45,7 @@ Completed stages:
 | Stage 2.9 | Grafana dashboard provisioning | Completed |
 | Stage 2.10 | Monitoring stack final validation | Completed |
 | Stage 3.1 | Site playbook and operational tags | Completed |
+| Stage 3.2 | Ansible Vault secret management | Completed |
 ---
 
 ## Lab Architecture
@@ -277,6 +278,8 @@ Node IP plan:
 | Ansible | Configuration management and orchestration |
 | Ansible Roles | Reusable automation structure |
 | Ansible Inventory | Managed host definition |
+| Ansible Vault | Local secret management for PostgreSQL and Grafana credentials |
+| ansible-lint | Ansible best-practice validation |
 | group_vars | Environment-specific variables |
 | Jinja2 Templates | Dynamic file generation |
 | SSH Keys | Secure authentication from control node to managed nodes |
@@ -291,7 +294,6 @@ Node IP plan:
 | PromQL | Metrics query language used by Prometheus and Grafana panels |
 | systemd | Service management on Linux nodes |
 | yamllint | YAML syntax and formatting validation |
-| ansible-lint | Ansible best-practice validation |
 | GitHub Actions | Automated CI validation |
 | Terraform | Planned Infrastructure as Code tool |
 | AWS CloudFormation | Planned AWS-native IaC practice |
@@ -306,6 +308,8 @@ enterprise-automation-lab/
 ├── ansible/
 │   ├── ansible.cfg
 │   ├── requirements.yml
+│   ├── examples/
+│   │   └── vault.yml.example
 │   ├── inventories/
 │   │   └── dev/
 │   │       ├── hosts.ini
@@ -804,6 +808,59 @@ central site.yml execution with tags
 This improves operational control and makes the Ansible structure closer to production-style automation.
 ---
 
+## Ansible Vault Secret Management
+
+The project now includes a local Ansible Vault workflow for secret management.
+
+Real secrets are stored locally in an encrypted Vault file:
+
+```text
+ansible/inventories/dev/group_vars/all/vault.yml
+```
+
+The Vault password file is stored locally:
+
+```text
+ansible/.vault_pass.txt
+```
+
+Both files are excluded from Git.
+
+The repository includes only a safe example file:
+
+```text
+ansible/examples/vault.yml.example
+```
+
+Current Vault-managed values:
+
+```text
+PostgreSQL application user password
+Grafana admin password
+```
+
+The PostgreSQL role can create users from Vault-provided variables.
+
+The Grafana role can validate and reset the admin password from Vault-provided variables.
+
+Sensitive Ansible tasks use:
+
+```yaml
+no_log: true
+```
+
+to avoid leaking passwords into terminal output.
+
+Before running Vault-dependent playbooks locally, export:
+
+```bash
+cd ansible
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+```
+
+The real Vault file and Vault password file must never be committed to GitHub.
+---
+
 ## Validation
 
 The project includes local and automated validation.
@@ -1088,6 +1145,14 @@ Expected result:
 for healthy scrape targets.
 
 ---
+## GitHub Vault Validation:
+```bash
+cd ansible
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+ansible-playbook playbooks/site.yml --syntax-check
+ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
+ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check
+```
 
 ## GitHub Actions Validation
 
@@ -1130,6 +1195,12 @@ site.yml
 The current local lab validates successfully:
 
 ```text
+Ansible Vault file encryption:            successful
+Vault password file usage:                successful
+PostgreSQL Vault user creation:           successful
+Grafana Vault admin password management:  successful
+Vault secrets excluded from Git:          successful
+Vault lint and syntax validation:         successful
 Ansible ping to all nodes:              successful
 SSH key login:                          successful
 Linux baseline role:                    successful
@@ -1201,6 +1272,7 @@ Main documentation files:
 | `docs/runbooks/stage-02-09-grafana-dashboard-provisioning.md` | Grafana dashboard provisioning |
 | `docs/runbooks/stage-02-10-monitoring-final-validation.md` | Monitoring stack final validation |
 | `docs/runbooks/stage-03-01-site-playbook-and-tags.md` | Site playbook and operational tags |
+| `docs/runbooks/stage-03-02-ansible-vault-secret-management.md` | Ansible Vault secret management |
 | `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
 
 ---
@@ -1227,6 +1299,7 @@ docs/screenshots/stage-02-grafana-role/
 docs/screenshots/stage-02-grafana-dashboard-provisioning/
 docs/screenshots/stage-02-monitoring-final-validation/
 docs/screenshots/stage-03-site-playbook-and-tags/
+docs/screenshots/stage-03-ansible-vault-secret-management/
 ```
 
 Screenshots are used as evidence that the local lab was configured and validated successfully.
@@ -1239,7 +1312,6 @@ Planned next stages:
 
 | Stage | Goal |
 |---|---|
-| Stage 3.2 | Ansible Vault for secret management |
 | Stage 3.3 | Environment separation for dev and prod inventories |
 | Stage 3.4 | Advanced handlers, pre_tasks and post_tasks |
 | Stage 4 | Terraform foundations |
@@ -1252,6 +1324,11 @@ Planned next stages:
 
 This project demonstrates practical experience with:
 
+- Ansible Vault secret management
+- encrypted local secrets
+- safe Vault example files
+- no_log usage for sensitive tasks
+- Git secret exclusion workflow
 - Linux automation control environment setup
 - Hyper-V private lab networking
 - WSL to Hyper-V connectivity troubleshooting
@@ -1310,4 +1387,11 @@ The project now includes a central site.yml playbook.
 The full infrastructure stack can be deployed through one main Ansible entrypoint.
 Operational tags allow selective execution of baseline, web, database, monitoring, Grafana and dashboard automation.
 The project supports both individual playbook execution and central site playbook execution.
+The project now uses Ansible Vault for local secret management.
+PostgreSQL application user credentials are managed through Vault.
+Grafana admin credentials are managed through Vault.
+Real secret files are encrypted locally and excluded from Git.
+The repository contains only safe secret examples.
+Sensitive Ansible tasks hide credentials using no_log.
+
 ```

@@ -108,6 +108,44 @@
   ansible.builtin.debug:
     var: grafana_health_result.json
 
+- name: Check Grafana admin authentication from Vault
+  ansible.builtin.uri:
+    url: "{{ grafana_admin_api_url }}"
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    status_code:
+      - 200
+      - 401
+      - 403
+    return_content: false
+  register: grafana_admin_auth_check
+  changed_when: false
+  failed_when: false
+  no_log: true
+  when: grafana_manage_admin_password | bool
+
+- name: Reset Grafana admin password from Vault
+  ansible.builtin.command:
+    cmd: "grafana-cli admin reset-admin-password {{ grafana_admin_password }}"
+  changed_when: true
+  no_log: true
+  when:
+    - grafana_manage_admin_password | bool
+    - grafana_admin_auth_check.status != 200
+
+- name: Validate Grafana admin authentication from Vault
+  ansible.builtin.uri:
+    url: "{{ grafana_admin_api_url }}"
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    status_code: 200
+    return_content: false
+  changed_when: false
+  no_log: true
+  when: grafana_manage_admin_password | bool
+
 - name: Gather service facts
   ansible.builtin.service_facts:
 

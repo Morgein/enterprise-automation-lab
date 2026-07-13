@@ -1,0 +1,11 @@
+---
+# Example Ansible Vault variables.
+# Copy this structure into inventories/dev/group_vars/all/vault.yml
+# and encrypt the real file with ansible-vault.
+
+vault_postgresql_users:
+  - name: automation_app
+    password: "CHANGE_ME_STRONG_POSTGRESQL_PASSWORD"
+
+vault_grafana_admin_user: admin
+vault_grafana_admin_password: "CHANGE_ME_STRONG_GRAFANA_PASSWORD"
