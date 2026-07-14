@@ -19,13 +19,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  terraform-azure-basics-validation:
-    name: Terraform Azure Basics Validation
+  terraform-validation:
+    name: Terraform Validation
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: terraform/azure/basics
+    env:
+      TF_VAR_subscription_id: "00000000-0000-0000-0000-000000000000"
 
     steps:
       - name: Checkout repository
@@ -37,10 +36,20 @@ jobs:
           terraform_version: "1.6.6"
 
       - name: Terraform format check
-        run: terraform fmt -check -recursive .
+        run: terraform fmt -check -recursive terraform
 
-      - name: Terraform init without backend
+      - name: Terraform init basics
+        working-directory: terraform/azure/basics
         run: terraform init -backend=false -input=false
 
-      - name: Terraform validate
+      - name: Terraform validate basics
+        working-directory: terraform/azure/basics
+        run: terraform validate
+
+      - name: Terraform init dev environment
+        working-directory: terraform/azure/environments/dev
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate dev environment
+        working-directory: terraform/azure/environments/dev
         run: terraform validate

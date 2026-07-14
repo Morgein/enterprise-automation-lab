@@ -2,21 +2,39 @@
 
 [![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
 [![Terraform Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml)
+
 ## Project Overview
 
 **Enterprise Automation Lab** is a practical infrastructure automation project built around a local Hyper-V Linux lab, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, and Terraform-based Azure Infrastructure as Code practice.
 
-The project is designed to demonstrate a realistic infrastructure automation learning path:
+The project demonstrates a complete infrastructure automation workflow:
 
 ```text
-local lab foundation
-    -> Ansible automation
-    -> monitoring and validation
-    -> backup and restore operations
+local virtualization
+    -> Linux node preparation
+    -> SSH-based automation access
+    -> Ansible configuration management
+    -> monitoring automation
+    -> backup and restore validation
     -> Terraform Azure Infrastructure as Code
-    -> future CloudFormation static validation
+    -> reusable Terraform module structure
+    -> CI-based static validation
 ```
 
+The main focus of the project is:
+
+```text
+infrastructure automation
+configuration management
+monitoring
+validation
+backup and restore operations
+Infrastructure as Code
+Azure networking
+Terraform modules
+CI validation
+technical documentation
+```
 
 ---
 
@@ -25,7 +43,7 @@ local lab foundation
 Current stage:
 
 ```text
-Stage 4.1 - Terraform Azure Basics
+Stage 5.1 - Terraform Azure Modules
 ```
 
 Ansible phase:
@@ -80,6 +98,8 @@ Planned
 | Stage 3.6 | Final Ansible hardening and cleanup | Completed |
 | Stage 4.0 | Azure and Terraform safety bootstrap | Completed |
 | Stage 4.1 | Terraform Azure basics: Resource Group, VNet, Subnet and NSG | Completed |
+| Stage 4.2 | Terraform validation workflow in GitHub Actions | Completed |
+| Stage 5.1 | Terraform Azure modules: network foundation module and dev environment | Completed |
 
 ---
 
@@ -107,12 +127,17 @@ Windows 11 Host
 │       └── monitor-01  192.168.100.31
 │
 └── Azure Student Subscription
-    └── Terraform Azure Basics
-        ├── Resource Group
-        ├── Virtual Network
-        ├── Subnet
-        ├── Network Security Group
-        └── Subnet to NSG association
+    └── Terraform Azure Infrastructure as Code
+        ├── Basics configuration
+        │   ├── Resource Group
+        │   ├── Virtual Network
+        │   ├── Subnet
+        │   ├── Network Security Group
+        │   └── Subnet to NSG association
+        │
+        └── Module-based configuration
+            ├── network-foundation module
+            └── dev environment
 ```
 
 ---
@@ -539,6 +564,8 @@ outputs
 state
 plan/apply/destroy workflow
 Azure resource modeling
+module structure
+environment separation
 cost-safe cloud validation
 ```
 
@@ -553,7 +580,7 @@ Ansible = configures servers and services
 
 ## Terraform Azure Basics
 
-Current Terraform basics stage:
+Terraform basics stage:
 
 ```text
 Stage 4.1 - Terraform Azure Basics
@@ -603,7 +630,7 @@ Azure region used after subscription policy validation:
 swedencentral
 ```
 
-Stage 4.1 Resource names:
+Stage 4.1 resource names:
 
 | Resource | Name |
 |---|---|
@@ -611,6 +638,81 @@ Stage 4.1 Resource names:
 | Virtual Network | `vnet-ea-lab-dev` |
 | Subnet | `snet-ea-lab-dev-main` |
 | Network Security Group | `nsg-ea-lab-dev-main` |
+
+---
+
+## Terraform Azure Modules
+
+Current advanced Terraform stage:
+
+```text
+Stage 5.1 - Terraform Azure Modules
+```
+
+This stage introduces a reusable Terraform module structure.
+
+The project now contains:
+
+```text
+terraform/azure/modules/network-foundation/
+terraform/azure/environments/dev/
+```
+
+The module directory contains reusable infrastructure logic.
+
+The environment directory contains concrete values for a specific deployment.
+
+In simple terms:
+
+```text
+module = how to create infrastructure
+environment = with which values to create it
+```
+
+The `network-foundation` module creates:
+
+```text
+Resource Group
+Virtual Network
+Subnet
+Network Security Group
+Subnet to Network Security Group association
+```
+
+The `dev` environment calls this module with dev-specific values:
+
+```text
+environment = dev
+location = swedencentral
+address_space = 10.40.0.0/16
+subnet_address_prefixes = 10.40.1.0/24
+```
+
+Module call flow:
+
+```text
+terraform/azure/environments/dev/
+    |
+    | calls
+    v
+terraform/azure/modules/network-foundation/
+    |
+    | creates
+    v
+Azure networking resources
+```
+
+Module-based Terraform state addresses:
+
+```text
+module.network_foundation.azurerm_resource_group.main
+module.network_foundation.azurerm_virtual_network.main
+module.network_foundation.azurerm_subnet.main
+module.network_foundation.azurerm_network_security_group.main
+module.network_foundation.azurerm_subnet_network_security_group_association.main
+```
+
+This confirms that Azure resources are created through the reusable Terraform module.
 
 ---
 
@@ -636,7 +738,7 @@ never commit real tfvars files
 never store Azure credentials in Git
 ```
 
-Services avoided in early stages:
+Services avoided in early Terraform stages:
 
 ```text
 AKS
@@ -670,6 +772,29 @@ Terraform basics files:
 | `terraform/azure/basics/terraform.tfvars.example` | Safe example variables |
 | `terraform/azure/basics/README.md` | Terraform basics documentation |
 
+Terraform module files:
+
+| File | Purpose |
+|---|---|
+| `terraform/azure/modules/network-foundation/versions.tf` | Terraform and AzureRM provider requirements for the module |
+| `terraform/azure/modules/network-foundation/variables.tf` | Module input variables |
+| `terraform/azure/modules/network-foundation/locals.tf` | Module naming and common tag logic |
+| `terraform/azure/modules/network-foundation/main.tf` | Azure resources created by the module |
+| `terraform/azure/modules/network-foundation/outputs.tf` | Module outputs |
+| `terraform/azure/modules/network-foundation/README.md` | Module documentation |
+
+Terraform dev environment files:
+
+| File | Purpose |
+|---|---|
+| `terraform/azure/environments/dev/versions.tf` | Terraform and provider requirements for dev |
+| `terraform/azure/environments/dev/providers.tf` | AzureRM provider configuration |
+| `terraform/azure/environments/dev/variables.tf` | Dev environment variables |
+| `terraform/azure/environments/dev/main.tf` | Calls the network foundation module |
+| `terraform/azure/environments/dev/outputs.tf` | Exposes module outputs |
+| `terraform/azure/environments/dev/terraform.tfvars.example` | Safe example values |
+| `terraform/azure/environments/dev/README.md` | Dev environment documentation |
+
 Local files not committed:
 
 ```text
@@ -677,48 +802,68 @@ terraform/azure/basics/terraform.tfvars
 terraform/azure/basics/terraform.tfstate
 terraform/azure/basics/terraform.tfstate.backup
 terraform/azure/basics/.terraform/
+
+terraform/azure/environments/dev/terraform.tfvars
+terraform/azure/environments/dev/terraform.tfstate
+terraform/azure/environments/dev/terraform.tfstate.backup
+terraform/azure/environments/dev/.terraform/
 ```
 
-Provider lock file committed:
+Provider lock files can be committed:
 
 ```text
 terraform/azure/basics/.terraform.lock.hcl
+terraform/azure/environments/dev/.terraform.lock.hcl
 ```
 
-The lock file is committed to keep provider versions reproducible.
+Provider lock files keep provider versions reproducible.
 
 ---
 
 ## Terraform Validation
 
-From the Terraform basics directory:
+Terraform basics validation:
 
 ```bash
 cd terraform/azure/basics
-```
 
-Initialize Terraform:
-
-```bash
-terraform init
-```
-
-Format code:
-
-```bash
-terraform fmt
-```
-
-Validate configuration:
-
-```bash
+terraform init -backend=false -input=false
+terraform fmt -check -recursive .
 terraform validate
 ```
 
-Preview resources:
+Terraform dev environment validation:
 
 ```bash
+cd terraform/azure/environments/dev
+
+terraform init -backend=false -input=false
+terraform fmt -check -recursive .
+terraform validate
+```
+
+Terraform plan for dev environment:
+
+```bash
+cd terraform/azure/environments/dev
+
 terraform plan
+```
+
+Expected Stage 5.1 plan:
+
+```text
+Plan: 5 to add, 0 to change, 0 to destroy.
+```
+
+Expected module-based resources:
+
+```text
+module.network_foundation.azurerm_resource_group.main
+module.network_foundation.azurerm_virtual_network.main
+module.network_foundation.azurerm_subnet.main
+module.network_foundation.azurerm_network_security_group.main
+module.network_foundation.azurerm_subnet_network_security_group_association.main
 ```
 
 Apply resources:
@@ -733,7 +878,7 @@ Show outputs:
 terraform output
 ```
 
-Show state resources:
+Show state:
 
 ```bash
 terraform state list
@@ -745,19 +890,13 @@ Destroy resources:
 terraform destroy
 ```
 
-Expected Stage 4.1 plan:
-
-```text
-Plan: 5 to add, 0 to change, 0 to destroy.
-```
-
-Expected Stage 4.1 apply:
+Expected apply result:
 
 ```text
 Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
 ```
 
-Expected Stage 4.1 destroy:
+Expected destroy result:
 
 ```text
 Destroy complete! Resources: 5 destroyed.
@@ -812,9 +951,12 @@ No AWS paid deployment is planned at the current stage.
 | Grafana | Metrics visualization |
 | PromQL | Metrics query language |
 | Terraform | Infrastructure as Code |
+| Terraform Modules | Reusable Infrastructure as Code structure |
 | AzureRM Provider | Terraform provider for Azure |
 | Azure Student Subscription | Cloud practice environment |
+| Azure Resource Group | Azure resource container |
 | Azure Virtual Network | Azure networking |
+| Azure Subnet | Azure network segmentation |
 | Azure Network Security Group | Azure network filtering |
 | yamllint | YAML validation |
 | ansible-lint | Ansible best-practice validation |
@@ -861,7 +1003,10 @@ enterprise-automation-lab/
 ├── terraform/
 │   ├── azure/
 │   │   ├── basics/
-│   │   └── advanced/
+│   │   ├── environments/
+│   │   │   └── dev/
+│   │   └── modules/
+│   │       └── network-foundation/
 │   └── docs/
 │       └── azure-cost-safety.md
 │
@@ -880,7 +1025,8 @@ enterprise-automation-lab/
 │
 └── .github/
     └── workflows/
-        └── ansible-validation.yml
+        ├── ansible-validation.yml
+        └── terraform-validation.yml
 ```
 
 ---
@@ -910,14 +1056,28 @@ ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
 ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
 ```
 
-Run Terraform validation:
+Run Terraform formatting:
+
+```bash
+terraform fmt -check -recursive terraform
+```
+
+Run Terraform basics validation:
 
 ```bash
 cd terraform/azure/basics
 
-terraform fmt
+terraform init -backend=false -input=false
 terraform validate
-terraform plan
+```
+
+Run Terraform dev environment validation:
+
+```bash
+cd terraform/azure/environments/dev
+
+terraform init -backend=false -input=false
+terraform validate
 ```
 
 ---
@@ -972,11 +1132,27 @@ terraform state list
 terraform destroy
 ```
 
+Terraform Azure module-based dev workflow:
+
+```bash
+cd terraform/azure/environments/dev
+
+terraform init
+terraform validate
+terraform plan
+terraform apply
+terraform output
+terraform state list
+terraform destroy
+```
+
 ---
 
 ## GitHub Actions Validation
 
-GitHub Actions currently validates the Ansible phase.
+GitHub Actions validates Ansible and Terraform code.
+
+### Ansible Validation
 
 Workflow file:
 
@@ -984,7 +1160,7 @@ Workflow file:
 .github/workflows/ansible-validation.yml
 ```
 
-The workflow checks:
+The Ansible workflow checks:
 
 ```text
 YAML formatting
@@ -1012,7 +1188,33 @@ site.yml
 10-restore-postgresql-validation.yml
 ```
 
-Terraform CI validation is planned for the next Terraform stage.
+### Terraform Validation
+
+Workflow file:
+
+```text
+.github/workflows/terraform-validation.yml
+```
+
+The Terraform workflow checks:
+
+```text
+terraform fmt -check -recursive terraform
+terraform init -backend=false for terraform/azure/basics
+terraform validate for terraform/azure/basics
+terraform init -backend=false for terraform/azure/environments/dev
+terraform validate for terraform/azure/environments/dev
+```
+
+The workflow does not run:
+
+```text
+terraform plan
+terraform apply
+terraform destroy
+```
+
+This prevents Azure deployment from CI and keeps the workflow cost-safe.
 
 ---
 
@@ -1026,8 +1228,12 @@ Main documentation files:
 | `docs/ansible-architecture.md` | Architecture explanation of the Ansible project |
 | `docs/runbooks/ansible-operations-guide.md` | Main operational guide for the Ansible workflow |
 | `docs/runbooks/stage-03-06-final-ansible-hardening.md` | Final Ansible hardening and cleanup |
+| `docs/runbooks/stage-04-01-terraform-azure-basics.md` | Terraform Azure basics stage runbook |
+| `docs/runbooks/stage-05-01-terraform-azure-modules.md` | Terraform Azure modules stage runbook |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
 | `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
+| `terraform/azure/modules/network-foundation/README.md` | Network foundation module documentation |
+| `terraform/azure/environments/dev/README.md` | Terraform dev environment documentation |
 
 Stage runbooks are stored in:
 
@@ -1070,6 +1276,19 @@ docs/screenshots/stage-03-environment-separation/
 docs/screenshots/stage-03-postgresql-backup-restore/
 docs/screenshots/stage-03-final-ansible-hardening/
 docs/screenshots/stage-04-azure-terraform-basics/
+docs/screenshots/stage-04-terraform-validation/
+docs/screenshots/stage-05-terraform-azure-modules/
+```
+
+Stage 5.1 screenshots:
+
+```text
+docs/screenshots/stage-05-terraform-azure-modules/
+├── 01-terraform-module-plan.png
+├── 02-terraform-module-apply-output-state.png
+├── 03-azure-portal-module-resource-group.png
+├── 04-azure-portal-module-tags.png
+└── 05-azure-portal-module-vnet-subnet-nsg.png
 ```
 
 Screenshots are used as runtime evidence that the lab was configured and validated successfully.
@@ -1080,9 +1299,7 @@ Screenshots are used as runtime evidence that the lab was configured and validat
 
 | Stage | Goal |
 |---|---|
-| Stage 4.2 | Terraform Azure basics documentation, runbook and CI validation |
-| Stage 5.1 | Terraform Azure modules |
-| Stage 5.2 | Terraform Azure environment separation |
+| Stage 5.2 | Terraform environment separation |
 | Stage 5.3 | Terraform remote state with Azure Storage |
 | Stage 5.4 | Terraform security and policy validation |
 | Stage 6.1 | CloudFormation basics with local static validation |
@@ -1091,9 +1308,9 @@ Screenshots are used as runtime evidence that the lab was configured and validat
 
 ---
 
-## Key Learning Outcomes
+## Technical Outcomes
 
-This project demonstrates practical experience with:
+This project demonstrates practical work with:
 
 ```text
 Linux automation control environment setup
@@ -1130,6 +1347,11 @@ Terraform locals
 Terraform outputs
 Terraform state basics
 Terraform plan/apply/destroy workflow
+Terraform module structure
+Terraform root modules
+Terraform child modules
+Terraform module inputs
+Terraform module outputs
 Azure Resource Group management
 Azure Virtual Network basics
 Azure Subnet basics
@@ -1155,11 +1377,13 @@ The project includes preflight and post-deployment validation.
 The project includes PostgreSQL backup and restore validation.
 The project includes final Ansible operations and architecture documentation.
 
-The Terraform phase has started.
+The Terraform phase is in progress.
 
 Terraform is installed and used with AzureRM provider.
 Azure student subscription is used with strict cost safety rules.
-Stage 4.1 creates a safe Azure networking foundation with Resource Group, VNet, Subnet, NSG and NSG association.
+Stage 4.1 created a safe Azure networking foundation with Resource Group, VNet, Subnet, NSG and NSG association.
+Stage 4.2 added Terraform validation through GitHub Actions.
+Stage 5.1 introduced a reusable network-foundation module and a dev environment that calls this module.
 The Terraform workflow demonstrates init, validate, plan, apply, output, state list and destroy.
 Azure resources are destroyed after validation to protect student credits.
 
