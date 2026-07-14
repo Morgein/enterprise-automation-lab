@@ -1,7 +1,7 @@
 # Enterprise Automation Lab
 
 [![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
-
+[![Terraform Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml)
 ## Project Overview
 
 **Enterprise Automation Lab** is a practical infrastructure automation project built around a local Hyper-V Linux lab, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, and Terraform-based Azure Infrastructure as Code practice.
