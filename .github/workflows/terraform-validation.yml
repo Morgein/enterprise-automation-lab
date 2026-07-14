@@ -1,0 +1,46 @@
+---
+name: Terraform Validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-validation.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-validation.yml"
+
+  workflow_dispatch:
+
+jobs:
+  terraform-azure-basics-validation:
+    name: Terraform Azure Basics Validation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform/azure/basics
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive .
+
+      - name: Terraform init without backend
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        run: terraform validate
