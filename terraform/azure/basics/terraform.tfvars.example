@@ -1,0 +1,13 @@
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+project_name = "enterprise-automation-lab"
+
+environment = "dev"
+
+location = "westeurope"
+
+address_space = ["10.40.0.0/16"]
+
+subnet_address_prefixes = ["10.40.1.0/24"]
+
+allowed_ssh_source = "10.0.0.0/8"

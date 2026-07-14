@@ -39,3 +39,22 @@ secrets/
 ansible/.vault_pass.txt
 ansible/inventories/dev/group_vars/all/vault.yml
 ansible/inventories/prod/group_vars/all/vault.yml
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform generated local files
+terraform/**/generated/
+
+# Terraform local variable files
+*.tfvars
+!*.tfvars.example

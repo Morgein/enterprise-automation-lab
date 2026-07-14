@@ -4,11 +4,29 @@
 
 ## Project Overview
 
-**Enterprise Automation Lab** is a local infrastructure automation project built with **Kali Linux WSL**, **Hyper-V**, **Ansible**, **GitHub Actions**, and future Infrastructure as Code tooling such as **Terraform** and **AWS CloudFormation**.
+**Enterprise Automation Lab** is a practical infrastructure automation project built around a local Hyper-V Linux lab, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, and Terraform-based Azure Infrastructure as Code practice.
 
-The project simulates a small enterprise-style Linux infrastructure environment and demonstrates how infrastructure can be configured, validated, documented, monitored, visualized, and gradually automated.
+The project is designed to demonstrate a realistic infrastructure automation learning path:
 
-The main goal is to build automation skills step by step: from junior-level Ansible basics to more advanced infrastructure automation patterns.
+```text
+local lab foundation
+    -> Ansible automation
+    -> monitoring and validation
+    -> backup and restore operations
+    -> Terraform Azure Infrastructure as Code
+    -> future CloudFormation static validation
+```
+
+The main goal is to build hands-on skills for roles such as:
+
+```text
+Linux Administrator
+System Administrator
+Infrastructure Engineer
+Junior DevOps Engineer
+Cloud Engineer Trainee
+SRE Trainee
+```
 
 ---
 
@@ -17,10 +35,30 @@ The main goal is to build automation skills step by step: from junior-level Ansi
 Current stage:
 
 ```text
-Current stage: Stage 3.6 - Final Ansible hardening and cleanup
+Stage 4.1 - Terraform Azure Basics
 ```
 
-Completed stages:
+Ansible phase:
+
+```text
+Completed
+```
+
+Terraform phase:
+
+```text
+In progress
+```
+
+CloudFormation phase:
+
+```text
+Planned
+```
+
+---
+
+## Completed Stages
 
 | Stage | Description | Status |
 |---|---|---|
@@ -50,9 +88,12 @@ Completed stages:
 | Stage 3.4 | Preflight and post-deployment validation | Completed |
 | Stage 3.5 | PostgreSQL backup and restore automation | Completed |
 | Stage 3.6 | Final Ansible hardening and cleanup | Completed |
+| Stage 4.0 | Azure and Terraform safety bootstrap | Completed |
+| Stage 4.1 | Terraform Azure basics: Resource Group, VNet, Subnet and NSG | Completed |
+
 ---
 
-## Lab Architecture
+## High-Level Architecture
 
 ```text
 Windows 11 Host
@@ -63,101 +104,111 @@ Windows 11 Host
 │       ├── SSH Client
 │       ├── Python
 │       ├── Ansible
+│       ├── Terraform
+│       ├── Azure CLI
 │       ├── ansible-lint
 │       └── yamllint
 │
-└── Hyper-V
-    └── Internal NAT Network: 192.168.100.0/24
-        │
-        ├── web-01      192.168.100.11
-        ├── web-02      192.168.100.12
-        ├── db-01       192.168.100.21
-        └── monitor-01  192.168.100.31
+├── Hyper-V
+│   └── Internal NAT Network: 192.168.100.0/24
+│       ├── web-01      192.168.100.11
+│       ├── web-02      192.168.100.12
+│       ├── db-01       192.168.100.21
+│       └── monitor-01  192.168.100.31
+│
+└── Azure Student Subscription
+    └── Terraform Azure Basics
+        ├── Resource Group
+        ├── Virtual Network
+        ├── Subnet
+        ├── Network Security Group
+        └── Subnet to NSG association
 ```
+
+---
+
+## Local Hyper-V Lab Architecture
+
+The local lab uses a dedicated Hyper-V internal NAT network.
+
+| Component | Value |
+|---|---|
+| Hyper-V Switch | `EA-LAB-Internal` |
+| NAT Name | `EA-LAB-NAT` |
+| Subnet | `192.168.100.0/24` |
+| Gateway | `192.168.100.1` |
+| DNS | `1.1.1.1`, `8.8.8.8` |
+
+Node IP plan:
+
+| Hostname | IP Address | Role |
+|---|---:|---|
+| `web-01` | `192.168.100.11` | Web server |
+| `web-02` | `192.168.100.12` | Web server |
+| `db-01` | `192.168.100.21` | Database server |
+| `monitor-01` | `192.168.100.31` | Monitoring server |
 
 ---
 
 ## Service Architecture
 
-Current service layout:
-
 ```text
 Kali Linux WSL
     |
-    | Ansible / SSH
+    | Ansible over SSH
     v
 Hyper-V Linux Nodes
     |
     ├── web-01
     │   ├── Linux baseline
     │   ├── Nginx
-    │   │   └── Custom Ansible-managed index.html
     │   └── Node Exporter
-    │       └── http://192.168.100.11:9100/metrics
     │
     ├── web-02
     │   ├── Linux baseline
     │   ├── Nginx
-    │   │   └── Custom Ansible-managed index.html
     │   └── Node Exporter
-    │       └── http://192.168.100.12:9100/metrics
     │
     ├── db-01
     │   ├── Linux baseline
     │   ├── PostgreSQL
-    │   │   └── automation_lab database
+    │   ├── PostgreSQL backup automation
+    │   ├── PostgreSQL restore validation
     │   └── Node Exporter
-    │       └── http://192.168.100.21:9100/metrics
     │
     └── monitor-01
         ├── Linux baseline
         ├── Node Exporter
-        │   └── http://192.168.100.31:9100/metrics
         ├── Prometheus
-        │   ├── Web UI: http://192.168.100.31:9090
-        │   ├── Readiness: http://192.168.100.31:9090/-/ready
-        │   └── Targets API: http://192.168.100.31:9090/api/v1/targets
         └── Grafana
-            ├── Web UI: http://192.168.100.31:3000
-            ├── Health API: http://192.168.100.31:3000/api/health
-            ├── Prometheus data source provisioned automatically
-            └── Enterprise Linux Overview dashboard provisioned automatically
 ```
 
 ---
 
 ## Monitoring Architecture
 
-The monitoring stack currently contains:
+The monitoring stack contains:
 
 ```text
 Node Exporter
 Prometheus
 Grafana
-Provisioned Grafana Dashboard
+Provisioned Grafana dashboard
 ```
 
-Node Exporter runs on every Linux node and exposes Linux system metrics on port `9100`.
-
-Prometheus runs on `monitor-01` and collects metrics from all Node Exporter endpoints.
-
-Grafana runs on `monitor-01` and visualizes metrics from Prometheus.
-
-The Grafana dashboard is provisioned automatically through Ansible.
+Monitoring flow:
 
 ```text
-web-01:9100
-web-02:9100
-db-01:9100
-monitor-01:9100
+web-01 Node Exporter
+web-02 Node Exporter
+db-01 Node Exporter
+monitor-01 Node Exporter
         |
         v
-monitor-01:9090
-Prometheus Server
+Prometheus on monitor-01
         |
         v
-monitor-01:3000
-Grafana
+Grafana on monitor-01
         |
         v
 Enterprise Linux Overview Dashboard
@@ -174,15 +225,15 @@ Current Node Exporter targets:
 
 Prometheus endpoint:
 
-| Service | Hostname | IP Address | Endpoint |
-|---|---|---:|---|
-| Prometheus | `monitor-01` | `192.168.100.31` | `http://192.168.100.31:9090` |
+```text
+http://192.168.100.31:9090
+```
 
 Grafana endpoint:
 
-| Service | Hostname | IP Address | Endpoint |
-|---|---|---:|---|
-| Grafana | `monitor-01` | `192.168.100.31` | `http://192.168.100.31:3000` |
+```text
+http://192.168.100.31:3000
+```
 
 Provisioned Grafana dashboard:
 
@@ -190,27 +241,7 @@ Provisioned Grafana dashboard:
 |---|---|---|
 | `Enterprise Automation Lab` | `Enterprise Linux Overview` | Linux infrastructure metrics overview |
 
-Prometheus scrape jobs currently configured:
-
-```text
-prometheus
-node_exporter
-```
-
-The `prometheus` job scrapes Prometheus itself.
-
-The `node_exporter` job scrapes Linux metrics from all managed Linux nodes.
-
-Grafana uses Prometheus as a provisioned data source.
-
-Grafana dashboard provisioning currently deploys:
-
-```text
-/etc/grafana/provisioning/dashboards/linux-overview.yml
-/var/lib/grafana/dashboards/linux-overview.json
-```
-
-Current provisioned dashboard panels:
+Current dashboard panels:
 
 ```text
 Node Exporter Targets UP
@@ -220,208 +251,75 @@ Root Filesystem Free Space
 System Load 1m
 Network Receive Traffic
 ```
-```markdown
-Final monitoring validation confirms the complete end-to-end chain:
-
-```text
-Linux Nodes
-  -> Node Exporter
-  -> Prometheus
-  -> Grafana
-  -> Enterprise Linux Overview Dashboard
-```
-
-Validated monitoring components:
-
-```text
-Node Exporter services active and enabled
-Node Exporter metrics endpoints reachable
-Prometheus service active and enabled
-Prometheus readiness endpoint healthy
-Prometheus targets API healthy
-Prometheus UI shows targets UP
-Prometheus query engine returns metrics
-Grafana service active and enabled
-Grafana health endpoint healthy
-Grafana Prometheus datasource provisioned
-Grafana dashboard provisioned and displaying metrics
-```
-```
----
-
-## Network Design
-
-The lab uses a dedicated Hyper-V internal NAT network.
-
-| Component | Value |
-|---|---|
-| Hyper-V Switch | `EA-LAB-Internal` |
-| NAT Name | `EA-LAB-NAT` |
-| Subnet | `192.168.100.0/24` |
-| Gateway | `192.168.100.1` |
-| DNS | `1.1.1.1`, `8.8.8.8` |
-
-Node IP plan:
-
-| Hostname | IP Address | Role |
-|---|---:|---|
-| `web-01` | `192.168.100.11` | First web server |
-| `web-02` | `192.168.100.12` | Second web server |
-| `db-01` | `192.168.100.21` | Database server |
-| `monitor-01` | `192.168.100.31` | Monitoring server |
 
 ---
 
-## Technologies Used
+## Ansible Phase Summary
 
-| Technology | Purpose |
-|---|---|
-| Kali Linux WSL | Automation control workstation |
-| Hyper-V | Local virtualization platform |
-| Ubuntu Server | Managed Linux node operating system |
-| Ansible | Configuration management and orchestration |
-| Ansible Roles | Reusable automation structure |
-| Ansible Inventory | Managed host definition |
-| Ansible Vault | Local secret management for PostgreSQL and Grafana credentials |
-| ansible-lint | Ansible best-practice validation |
-| group_vars | Environment-specific variables |
-| Jinja2 Templates | Dynamic file generation |
-| SSH Keys | Secure authentication from control node to managed nodes |
-| Nginx | Web server role deployed to web nodes |
-| PostgreSQL | Database server deployed to `db-01` |
-| community.postgresql | Ansible collection for PostgreSQL automation |
-| Prometheus Node Exporter | Linux system metrics exporter |
-| Prometheus | Metrics collection and time-series monitoring server |
-| promtool | Prometheus configuration validation |
-| Grafana | Metrics visualization and dashboards |
-| Grafana provisioning | Automated data source and dashboard configuration |
-| PromQL | Metrics query language used by Prometheus and Grafana panels |
-| systemd | Service management on Linux nodes |
-| yamllint | YAML syntax and formatting validation |
-| GitHub Actions | Automated CI validation |
-| Terraform | Planned Infrastructure as Code tool |
-| AWS CloudFormation | Planned AWS-native IaC practice |
+The Ansible phase is complete.
 
----
-
-## Repository Structure
+It includes:
 
 ```text
-enterprise-automation-lab/
-│
-├── ansible/
-│   ├── ansible.cfg
-│   ├── requirements.yml
-│   ├── examples/
-│   │   └── vault.yml.example
-│   ├── inventories/
-│   │   ├── dev/
-│   │   │   ├── hosts.ini
-│   │   │   └── group_vars/
-│   │   │       ├── all/
-│   │   │       │   └── main.yml
-│   │   │       ├── database.yml
-│   │   │       ├── linux.yml
-│   │   │       └── monitoring.yml
-│   │   └── prod/
-│   │       ├── hosts.ini
-│   │       └── group_vars/
-│   │           ├── all/
-│   │           │   └── main.yml
-│   │           ├── database.yml
-│   │           ├── linux.yml
-│   │           └── monitoring.yml
-│   ├── playbooks/
-│   │   ├── site.yml
-│   │   ├── 00-preflight.yml
-│   │   ├── 01-bootstrap-linux.yml
-│   │   ├── 02-apply-linux-baseline.yml
-│   │   ├── 03-deploy-nginx.yml
-│   │   ├── 04-deploy-postgresql.yml
-│   │   ├── 05-deploy-node-exporter.yml
-│   │   ├── 06-deploy-prometheus.yml
-│   │   ├── 07-deploy-grafana.yml
-│   │   ├── 08-post-deployment-validation.yml
-│   │   ├── 09-backup-postgresql.yml
-│   │   └── 10-restore-postgresql-validation.yml
-│   └── roles/
-│       ├── linux_baseline/
-│       │   ├── defaults/
-│       │   ├── handlers/
-│       │   ├── meta/
-│       │   └── tasks/
-│       ├── nginx/
-│       │   ├── defaults/
-│       │   ├── handlers/
-│       │   ├── meta/
-│       │   ├── tasks/
-│       │   └── templates/
-│       ├── postgresql/
-│       │   ├── defaults/
-│       │   ├── handlers/
-│       │   ├── meta/
-│       │   └── tasks/
-│       ├── postgresql_backup/
-│       │   ├── defaults/
-│       │   ├── handlers/
-│       │   ├── meta/
-│       │   └── tasks/
-│       ├── node_exporter/
-│       │   ├── defaults/
-│       │   ├── handlers/
-│       │   ├── meta/
-│       │   ├── tasks/
-│       │   └── templates/
-│       ├── prometheus/
-│       │   ├── defaults/
-│       │   ├── handlers/
-│       │   ├── meta/
-│       │   ├── tasks/
-│       │   └── templates/
-│       └── grafana/
-│           ├── defaults/
-│           ├── handlers/
-│           ├── meta/
-│           ├── tasks/
-│           └── templates/
-│               ├── dashboard-provider.yml.j2
-│               ├── linux-overview-dashboard.json.j2
-│               └── prometheus-datasource.yml.j2
-│
-├── cloudformation/
-│
-├── terraform/
-│   ├── environments/
-│   │   ├── dev/
-│   │   └── prod/
-│   └── modules/
-│
-├── scripts/
-│   └── hyperv/
-│       └── create-lab-network.ps1
-│
-├── docs/
-│   ├── architecture.md
-│   ├── runbooks/
-│   ├── screenshots/
-│   └── troubleshooting/
-│
-└── .github/
-    └── workflows/
-        └── ansible-validation.yml
+multi-node inventory
+dev/prod inventory separation
+Linux baseline automation
+Nginx automation
+PostgreSQL automation
+Node Exporter automation
+Prometheus automation
+Grafana automation
+Grafana dashboard provisioning
+Ansible Vault secret management
+preflight checks
+post-deployment validation
+PostgreSQL backup automation
+PostgreSQL restore validation
+GitHub Actions static validation
+operations guide
+architecture documentation
+runtime validation screenshots
 ```
+
+Main Ansible entrypoint:
+
+```text
+ansible/playbooks/site.yml
+```
+
+Normal deployment workflow:
+
+```text
+preflight
+    -> Linux baseline
+    -> Nginx
+    -> PostgreSQL
+    -> Node Exporter
+    -> Prometheus
+    -> Grafana
+    -> post-deployment validation
+```
+
+Manual operational tasks:
+
+```text
+PostgreSQL backup
+PostgreSQL restore validation
+```
+
+These are protected by the `never` tag and run only when explicitly requested.
 
 ---
 
 ## Ansible Inventory
 
-The development inventory is located at:
+Development inventory:
 
 ```text
 ansible/inventories/dev/hosts.ini
 ```
 
-Current inventory:
+Current dev inventory:
 
 ```ini
 [web]
@@ -444,516 +342,99 @@ ansible_user=automation
 ansible_ssh_private_key_file=~/.ssh/enterprise_automation_lab
 ```
 
-The `linux` group contains all managed Linux nodes.
-
-The `web` group is used for Nginx deployment.
-
-The `database` group is used for PostgreSQL deployment.
-
-The `monitoring` group is used for Prometheus, Grafana, and future monitoring services.
-
----
-
-## Ansible Collections
-
-The project uses an Ansible collection for PostgreSQL automation.
-
-Collection requirements are stored in:
+Production-like inventory:
 
 ```text
-ansible/requirements.yml
+ansible/inventories/prod/hosts.ini
 ```
 
-Current content:
-
-```yaml
----
-collections:
-  - name: community.postgresql
-```
-
-The collection is installed locally with:
-
-```bash
-cd ansible
-ansible-galaxy collection install -r requirements.yml -p ./collections --force
-```
-
-Downloaded collections are not committed to the repository.
-
-The project commits the dependency definition file:
-
-```text
-ansible/requirements.yml
-```
-
-but ignores:
-
-```text
-ansible/collections/
-```
-
-This keeps the repository clean and reproducible.
+The prod inventory is a template for syntax validation and future expansion. It is not currently used for runtime deployment.
 
 ---
 
 ## Ansible Roles
 
-### linux_baseline
-
-Path:
-
-```text
-ansible/roles/linux_baseline/
-```
-
-Purpose:
-
-```text
-Apply common baseline configuration to all Linux nodes.
-```
-
-The role performs:
-
-- host information display
-- APT package cache update
-- baseline package installation
-- SSH service validation
-- hostname validation
-
-Target group:
-
-```text
-linux
-```
+| Role | Purpose |
+|---|---|
+| `linux_baseline` | Common Linux baseline configuration |
+| `nginx` | Nginx installation and web page deployment |
+| `postgresql` | PostgreSQL installation, database and user management |
+| `node_exporter` | Node Exporter metrics agent deployment |
+| `prometheus` | Prometheus monitoring server deployment |
+| `grafana` | Grafana installation, datasource and dashboard provisioning |
+| `postgresql_backup` | PostgreSQL backup and restore validation automation |
 
 ---
 
-### nginx
-
-Path:
-
-```text
-ansible/roles/nginx/
-```
-
-Purpose:
-
-```text
-Deploy and manage Nginx on web servers.
-```
-
-The role performs:
-
-- Nginx package installation
-- web root directory management
-- custom `index.html` deployment through Jinja2 template
-- Nginx service enablement
-- local HTTP response validation
-
-Target group:
-
-```text
-web
-```
-
----
-
-### postgresql
-
-Path:
-
-```text
-ansible/roles/postgresql/
-```
-
-Purpose:
-
-```text
-Deploy and validate PostgreSQL on the database server.
-```
-
-The role performs:
-
-- PostgreSQL package installation
-- PostgreSQL service enablement
-- PostgreSQL service running-state validation
-- `automation_lab` database creation
-- PostgreSQL version validation
-- PostgreSQL database query validation
-
-Target group:
-
-```text
-database
-```
-
-Current database created by the role:
-
-```text
-automation_lab
-```
-
----
-
-### node_exporter
-
-Path:
-
-```text
-ansible/roles/node_exporter/
-```
-
-Purpose:
-
-```text
-Deploy Prometheus Node Exporter on all Linux nodes.
-```
-
-The role performs:
-
-- Node Exporter system group creation
-- Node Exporter system user creation
-- Node Exporter release archive download
-- archive extraction
-- binary installation to `/usr/local/bin/node_exporter`
-- systemd service deployment from a Jinja2 template
-- service enablement and startup
-- local `/metrics` endpoint validation
-- service state validation with `service_facts` and `assert`
-
-Target group:
-
-```text
-linux
-```
-
-Node Exporter exposes metrics on:
-
-```text
-0.0.0.0:9100
-```
-
----
-
-### prometheus
-
-Path:
-
-```text
-ansible/roles/prometheus/
-```
-
-Purpose:
-
-```text
-Deploy Prometheus server on the monitoring node.
-```
-
-The role performs:
-
-- Prometheus system group creation
-- Prometheus system user creation
-- configuration directory creation
-- data directory creation
-- Prometheus release archive download
-- archive extraction
-- `prometheus` binary installation
-- `promtool` binary installation
-- Prometheus configuration deployment from a Jinja2 template
-- configuration validation with `promtool`
-- systemd service deployment from a Jinja2 template
-- service enablement and startup
-- readiness endpoint validation
-- targets API validation
-- service state validation with `service_facts` and `assert`
-
-Target group:
-
-```text
-monitoring
-```
-
-Prometheus listens on:
-
-```text
-0.0.0.0:9090
-```
-
-Current Prometheus scrape targets:
-
-```text
-192.168.100.11:9100
-192.168.100.12:9100
-192.168.100.21:9100
-192.168.100.31:9100
-```
-
----
-
-### grafana
-
-Path:
-
-```text
-ansible/roles/grafana/
-```
-
-Purpose:
-
-```text
-Deploy Grafana on the monitoring node, provision Prometheus as a data source and provision Linux monitoring dashboards.
-```
-
-The role performs:
-
-- prerequisite package installation
-- Grafana APT repository key installation
-- Grafana APT repository configuration
-- Grafana package installation
-- Prometheus data source provisioning
-- Grafana dashboard provider provisioning
-- Linux overview dashboard provisioning
-- Grafana service enablement and startup
-- Grafana TCP port readiness wait
-- Grafana health endpoint validation
-- service state validation with `service_facts` and `assert`
-
-Target group:
-
-```text
-monitoring
-```
-
-Grafana listens on:
-
-```text
-0.0.0.0:3000
-```
-
-Prometheus data source is provisioned through:
-
-```text
-/etc/grafana/provisioning/datasources/prometheus.yml
-```
-
-Dashboard provider is provisioned through:
-
-```text
-/etc/grafana/provisioning/dashboards/linux-overview.yml
-```
-
-Dashboard JSON is provisioned through:
-
-```text
-/var/lib/grafana/dashboards/linux-overview.json
-```
-
-Current provisioned dashboard:
-
-```text
-Enterprise Automation Lab / Enterprise Linux Overview
-```
-
-Current Prometheus data source URL:
-
-```text
-http://127.0.0.1:9090
-```
-
----
-
-## Playbooks
+## Ansible Playbooks
 
 | Playbook | Purpose |
 |---|---|
-| `ansible/playbooks/site.yml` | Main operational playbook that imports the current infrastructure stack |
+| `ansible/playbooks/site.yml` | Main operational playbook |
 | `ansible/playbooks/00-preflight.yml` | Validates inventory, environment variables, SSH and sudo before deployment |
 | `ansible/playbooks/01-bootstrap-linux.yml` | Initial bootstrap playbook |
-| `ansible/playbooks/02-apply-linux-baseline.yml` | Apply Linux baseline role |
-| `ansible/playbooks/03-deploy-nginx.yml` | Deploy Nginx to web servers |
-| `ansible/playbooks/04-deploy-postgresql.yml` | Deploy PostgreSQL to database server |
-| `ansible/playbooks/05-deploy-node-exporter.yml` | Deploy Prometheus Node Exporter to all Linux nodes |
-| `ansible/playbooks/06-deploy-prometheus.yml` | Deploy Prometheus server to the monitoring node |
-| `ansible/playbooks/07-deploy-grafana.yml` | Deploy Grafana and provision dashboards on the monitoring node |
+| `ansible/playbooks/02-apply-linux-baseline.yml` | Applies Linux baseline role |
+| `ansible/playbooks/03-deploy-nginx.yml` | Deploys Nginx to web servers |
+| `ansible/playbooks/04-deploy-postgresql.yml` | Deploys PostgreSQL to database server |
+| `ansible/playbooks/05-deploy-node-exporter.yml` | Deploys Node Exporter to all Linux nodes |
+| `ansible/playbooks/06-deploy-prometheus.yml` | Deploys Prometheus to the monitoring node |
+| `ansible/playbooks/07-deploy-grafana.yml` | Deploys Grafana and dashboards |
 | `ansible/playbooks/08-post-deployment-validation.yml` | Validates services and endpoints after deployment |
-| `ansible/playbooks/09-backup-postgresql.yml` | Creates timestamped PostgreSQL backups and manages backup retention |
-| `ansible/playbooks/10-restore-postgresql-validation.yml` | Restores the latest PostgreSQL backup into a validation database and verifies SQL access |
+| `ansible/playbooks/09-backup-postgresql.yml` | Creates timestamped PostgreSQL backups |
+| `ansible/playbooks/10-restore-postgresql-validation.yml` | Restores latest backup into a validation database and verifies SQL access |
 
 ---
 
-## Site Playbook and Operational Tags
+## Ansible Vault
 
-The project now includes a main Ansible site playbook:
+The project uses Ansible Vault for local secret management.
 
-```text
-ansible/playbooks/site.yml
-```
-
-The site playbook imports the main infrastructure playbooks and provides one central operational entrypoint.
-
-Full current stack deployment:
-
-```bash
-ansible-playbook playbooks/site.yml
-```
-
-Selective deployment with tags:
-
-```bash
-ansible-playbook playbooks/site.yml --tags monitoring
-ansible-playbook playbooks/site.yml --tags grafana
-ansible-playbook playbooks/site.yml --tags web
-ansible-playbook playbooks/site.yml --tags database
-```
-
-Available operational tags include:
-
-```text
-baseline
-common
-dashboards
-database
-grafana
-linux
-metrics
-monitoring
-nginx
-node_exporter
-postgresql
-stage_02
-web
-```
-
-The site playbook allows the lab to support both execution models:
-
-```text
-individual playbook execution
-central site.yml execution with tags
-```
-
-This improves operational control and makes the Ansible structure closer to production-style automation.
----
-
-## Ansible Vault Secret Management
-
-The project now includes a local Ansible Vault workflow for secret management.
-
-Real secrets are stored locally in an encrypted Vault file:
+Encrypted local Vault files:
 
 ```text
 ansible/inventories/dev/group_vars/all/vault.yml
+ansible/inventories/prod/group_vars/all/vault.yml
 ```
 
-The Vault password file is stored locally:
+Local Vault password file:
 
 ```text
 ansible/.vault_pass.txt
 ```
 
-Both files are excluded from Git.
+These files are excluded from Git.
 
-The repository includes only a safe example file:
+Safe example file:
 
 ```text
 ansible/examples/vault.yml.example
 ```
 
-Current Vault-managed values:
+Vault-managed values:
 
 ```text
 PostgreSQL application user password
 Grafana admin password
 ```
 
-The PostgreSQL role can create users from Vault-provided variables.
-
-The Grafana role can validate and reset the admin password from Vault-provided variables.
-
-Sensitive Ansible tasks use:
-
-```yaml
-no_log: true
-```
-
-to avoid leaking passwords into terminal output.
-
-Before running Vault-dependent playbooks locally, export:
+Before running Vault-dependent playbooks locally:
 
 ```bash
 cd ansible
 export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
 ```
 
-The real Vault file and Vault password file must never be committed to GitHub.
 ---
-## Environment Separation
 
-The project now supports separate Ansible inventories for development and production-like environments.
-
-Current environments:
-
-```text
-ansible/inventories/dev/
-ansible/inventories/prod/
-```
-
-The `dev` inventory represents the real local Hyper-V lab:
-
-```text
-192.168.100.0/24
-```
-
-The `prod` inventory is a production-like template:
-
-```text
-10.20.10.0/24
-```
-
-The same roles and playbooks can be validated against both inventories.
-
-Development syntax check:
-
-```bash
-ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
-```
-
-Production-like syntax check:
-
-```bash
-ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
-```
-
-The production-like inventory is not currently used for runtime deployment.
-
-It is used for:
-
-```text
-inventory structure validation
-environment variable separation
-production-style documentation
-future expansion
-```
-
-This stage demonstrates the Ansible pattern:
-
-```text
-same automation code
-different inventories
-different variables
-different secrets
-different environments
-```
----
 ## Preflight and Post-deployment Validation
 
-The project now includes a safer operational workflow:
+The Ansible workflow includes:
 
 ```text
 preflight -> deployment -> post-deployment validation
 ```
 
-The preflight playbook validates:
+Preflight validates:
 
 ```text
 environment variables
@@ -963,41 +444,31 @@ Ansible user variable
 passwordless sudo access
 ```
 
-The post-deployment validation playbook validates:
+Post-deployment validation checks:
 
 ```text
 Node Exporter service and metrics endpoint
 Nginx HTTP response and page content
-PostgreSQL service unit and automation_lab database through SQL query
+PostgreSQL service unit and SQL query
 Prometheus service and readiness endpoint
 Grafana service and health endpoint
 ```
 
-The main site playbook now imports both validation playbooks:
-
-```text
-00-preflight.yml
-08-post-deployment-validation.yml
-```
-
-Useful operational commands:
+Useful commands:
 
 ```bash
+cd ansible
+
 ansible-playbook playbooks/site.yml --tags preflight
 ansible-playbook playbooks/site.yml --tags post_validation
 ansible-playbook playbooks/site.yml --tags validation
 ```
 
-This makes the automation workflow closer to production-style infrastructure operations.
 ---
 
 ## PostgreSQL Backup and Restore Automation
 
-The project now includes PostgreSQL backup and restore validation automation.
-
-The backup workflow creates timestamped SQL dump files from the `automation_lab` database.
-
-The restore validation workflow restores the latest backup into a separate validation database and verifies that the restored database accepts SQL queries.
+The project includes PostgreSQL backup and restore validation automation.
 
 Backup workflow:
 
@@ -1021,395 +492,501 @@ run SQL query against restored database
 verify restored database is queryable
 ```
 
-Backup and restore validation are integrated into `site.yml` with the `never` tag.
-
-This prevents backup and restore operations from running during a normal deployment.
-
-Manual backup command:
+Manual backup:
 
 ```bash
+cd ansible
 ansible-playbook playbooks/site.yml --tags backup
 ```
 
-Manual restore validation command:
+Manual restore validation:
 
 ```bash
+cd ansible
 ansible-playbook playbooks/site.yml --tags restore_validation
 ```
 
-The backup files are stored on the database server under:
+Backup location on `db-01`:
 
 ```text
 /var/backups/postgresql/automation_lab
 ```
 
-The latest backup is available through:
+Latest backup symlink:
 
 ```text
 /var/backups/postgresql/automation_lab/latest.sql
 ```
 
-The restore validation database is:
+Restore validation database:
 
 ```text
 automation_lab_restore_validation
 ```
 
-This proves that backups are not only created, but can also be restored successfully.
 ---
 
-## Validation
+## Terraform Azure Phase
 
-The project includes local and automated validation.
+The Terraform phase introduces Azure Infrastructure as Code practice.
 
-### Local Static Validation
+The project uses Azure student credits, so every Azure deployment follows strict cost safety rules.
 
-Run from the repository root:
+Main rule:
+
+```text
+Create resources -> validate resources -> take screenshots -> destroy resources
+```
+
+Terraform is used to practice:
+
+```text
+providers
+variables
+locals
+resources
+outputs
+state
+plan/apply/destroy workflow
+Azure resource modeling
+cost-safe cloud validation
+```
+
+Terraform does not replace Ansible in this project.
+
+```text
+Terraform = creates infrastructure
+Ansible = configures servers and services
+```
+
+---
+
+## Terraform Azure Basics
+
+Current Terraform basics stage:
+
+```text
+Stage 4.1 - Terraform Azure Basics
+```
+
+Terraform basics directory:
+
+```text
+terraform/azure/basics/
+```
+
+Resources created in Stage 4.1:
+
+```text
+Resource Group
+Virtual Network
+Subnet
+Network Security Group
+Subnet to NSG association
+```
+
+No virtual machine is created in this stage.
+
+Reason:
+
+```text
+VMs can consume credits if left running.
+The first Terraform Azure stage focuses on networking and safe Terraform workflow.
+```
+
+Terraform workflow demonstrated:
+
+```text
+terraform init
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
+terraform output
+terraform state list
+terraform destroy
+```
+
+Azure region used after subscription policy validation:
+
+```text
+swedencentral
+```
+
+Stage 4.1 Resource names:
+
+| Resource | Name |
+|---|---|
+| Resource Group | `rg-ea-lab-dev` |
+| Virtual Network | `vnet-ea-lab-dev` |
+| Subnet | `snet-ea-lab-dev-main` |
+| Network Security Group | `nsg-ea-lab-dev-main` |
+
+---
+
+## Azure Cost Safety
+
+Cost safety guide:
+
+```text
+terraform/docs/azure-cost-safety.md
+```
+
+Mandatory Azure lab rules:
+
+```text
+use a dedicated lab resource group
+use small and cheap resources
+review terraform plan before apply
+do not leave resources running longer than needed
+destroy resources after validation
+check Azure Portal after destroy
+never commit Terraform state
+never commit real tfvars files
+never store Azure credentials in Git
+```
+
+Services avoided in early stages:
+
+```text
+AKS
+Azure Firewall
+Application Gateway
+NAT Gateway
+Azure Bastion
+Managed PostgreSQL
+Managed MySQL
+large VM sizes
+premium disks
+snapshots
+VPN Gateway
+ExpressRoute
+```
+
+---
+
+## Terraform Files
+
+Terraform basics files:
+
+| File | Purpose |
+|---|---|
+| `terraform/azure/basics/versions.tf` | Terraform and provider version requirements |
+| `terraform/azure/basics/providers.tf` | AzureRM provider configuration |
+| `terraform/azure/basics/variables.tf` | Input variables and validation |
+| `terraform/azure/basics/locals.tf` | Computed names and common tags |
+| `terraform/azure/basics/main.tf` | Azure resources |
+| `terraform/azure/basics/outputs.tf` | Useful output values |
+| `terraform/azure/basics/terraform.tfvars.example` | Safe example variables |
+| `terraform/azure/basics/README.md` | Terraform basics documentation |
+
+Local files not committed:
+
+```text
+terraform/azure/basics/terraform.tfvars
+terraform/azure/basics/terraform.tfstate
+terraform/azure/basics/terraform.tfstate.backup
+terraform/azure/basics/.terraform/
+```
+
+Provider lock file committed:
+
+```text
+terraform/azure/basics/.terraform.lock.hcl
+```
+
+The lock file is committed to keep provider versions reproducible.
+
+---
+
+## Terraform Validation
+
+From the Terraform basics directory:
+
+```bash
+cd terraform/azure/basics
+```
+
+Initialize Terraform:
+
+```bash
+terraform init
+```
+
+Format code:
+
+```bash
+terraform fmt
+```
+
+Validate configuration:
+
+```bash
+terraform validate
+```
+
+Preview resources:
+
+```bash
+terraform plan
+```
+
+Apply resources:
+
+```bash
+terraform apply
+```
+
+Show outputs:
+
+```bash
+terraform output
+```
+
+Show state resources:
+
+```bash
+terraform state list
+```
+
+Destroy resources:
+
+```bash
+terraform destroy
+```
+
+Expected Stage 4.1 plan:
+
+```text
+Plan: 5 to add, 0 to change, 0 to destroy.
+```
+
+Expected Stage 4.1 apply:
+
+```text
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
+```
+
+Expected Stage 4.1 destroy:
+
+```text
+Destroy complete! Resources: 5 destroyed.
+```
+
+---
+
+## CloudFormation Phase
+
+CloudFormation is planned as a future AWS-native Infrastructure as Code learning block.
+
+Because the current available cloud credits are Azure credits, the CloudFormation phase will use static validation and documentation only unless AWS deployment is explicitly added later.
+
+Planned CloudFormation approach:
+
+```text
+local templates
+YAML syntax
+Parameters
+Mappings
+Conditions
+Resources
+Outputs
+cfn-lint
+static validation
+nested stack design
+change set concept
+drift detection concept
+documentation
+```
+
+No AWS paid deployment is planned at the current stage.
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Kali Linux WSL | Automation control workstation |
+| Hyper-V | Local virtualization platform |
+| Ubuntu Server | Managed Linux node operating system |
+| Ansible | Configuration management and orchestration |
+| Ansible Roles | Reusable automation structure |
+| Ansible Inventory | Managed host definition |
+| Ansible Vault | Local secret management |
+| community.postgresql | PostgreSQL automation collection |
+| Nginx | Web server |
+| PostgreSQL | Database server |
+| Prometheus Node Exporter | Linux metrics exporter |
+| Prometheus | Metrics collection |
+| Grafana | Metrics visualization |
+| PromQL | Metrics query language |
+| Terraform | Infrastructure as Code |
+| AzureRM Provider | Terraform provider for Azure |
+| Azure Student Subscription | Cloud practice environment |
+| Azure Virtual Network | Azure networking |
+| Azure Network Security Group | Azure network filtering |
+| yamllint | YAML validation |
+| ansible-lint | Ansible best-practice validation |
+| GitHub Actions | Static CI validation |
+| AWS CloudFormation | Planned AWS-native IaC static validation |
+
+---
+
+## Repository Structure
+
+```text
+enterprise-automation-lab/
+│
+├── ansible/
+│   ├── ansible.cfg
+│   ├── requirements.yml
+│   ├── examples/
+│   │   └── vault.yml.example
+│   ├── inventories/
+│   │   ├── dev/
+│   │   └── prod/
+│   ├── playbooks/
+│   │   ├── site.yml
+│   │   ├── 00-preflight.yml
+│   │   ├── 01-bootstrap-linux.yml
+│   │   ├── 02-apply-linux-baseline.yml
+│   │   ├── 03-deploy-nginx.yml
+│   │   ├── 04-deploy-postgresql.yml
+│   │   ├── 05-deploy-node-exporter.yml
+│   │   ├── 06-deploy-prometheus.yml
+│   │   ├── 07-deploy-grafana.yml
+│   │   ├── 08-post-deployment-validation.yml
+│   │   ├── 09-backup-postgresql.yml
+│   │   └── 10-restore-postgresql-validation.yml
+│   └── roles/
+│       ├── linux_baseline/
+│       ├── nginx/
+│       ├── postgresql/
+│       ├── postgresql_backup/
+│       ├── node_exporter/
+│       ├── prometheus/
+│       └── grafana/
+│
+├── terraform/
+│   ├── azure/
+│   │   ├── basics/
+│   │   └── advanced/
+│   └── docs/
+│       └── azure-cost-safety.md
+│
+├── cloudformation/
+│
+├── scripts/
+│   └── hyperv/
+│       └── create-lab-network.ps1
+│
+├── docs/
+│   ├── ansible-architecture.md
+│   ├── architecture.md
+│   ├── runbooks/
+│   ├── screenshots/
+│   └── troubleshooting/
+│
+└── .github/
+    └── workflows/
+        └── ansible-validation.yml
+```
+
+---
+
+## Local Static Validation
+
+Run from repository root:
 
 ```bash
 yamllint .
 ```
 
-Run from the Ansible directory:
+Run from Ansible directory:
 
 ```bash
 cd ansible
+
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+
 ansible-lint .
 ansible-playbook playbooks/site.yml --syntax-check
-ansible-playbook playbooks/01-bootstrap-linux.yml --syntax-check
-ansible-playbook playbooks/02-apply-linux-baseline.yml --syntax-check
-ansible-playbook playbooks/03-deploy-nginx.yml --syntax-check
-ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
-ansible-playbook playbooks/05-deploy-node-exporter.yml --syntax-check
-ansible-playbook playbooks/06-deploy-prometheus.yml --syntax-check
-ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check
-```
-
----
-
-### Runtime Validation
-
-Validate all Linux nodes:
-
-```bash
-cd ansible
-ansible linux -m ping
-```
-
-Apply Linux baseline:
-
-```bash
-ansible-playbook playbooks/02-apply-linux-baseline.yml
-```
-
-Deploy Nginx:
-
-```bash
-ansible-playbook playbooks/03-deploy-nginx.yml
-```
-
-Deploy PostgreSQL:
-
-```bash
-ansible-playbook playbooks/04-deploy-postgresql.yml
-```
-
-Deploy Node Exporter:
-
-```bash
-ansible-playbook playbooks/05-deploy-node-exporter.yml
-```
-
-Deploy Prometheus:
-
-```bash
-ansible-playbook playbooks/06-deploy-prometheus.yml
-```
-
-Deploy Grafana and dashboards:
-
-```bash
-ansible-playbook playbooks/07-deploy-grafana.yml
-```
-
-Deploy the full current stack through the site playbook:
-
-```bash
-ansible-playbook playbooks/site.yml
-```
-
-Deploy only the monitoring stack:
-
-```bash
-ansible-playbook playbooks/site.yml --tags monitoring
-```
-
-Deploy only Grafana:
-
-```bash
-ansible-playbook playbooks/site.yml --tags grafana
-```
-
-Deploy only the web layer:
-
-```bash
-ansible-playbook playbooks/site.yml --tags web
-```
-
-List available operational tags:
-
-```bash
-ansible-playbook playbooks/site.yml --list-tags
-```
-Validate inventory graphs:
-
-```bash
-cd ansible
-ansible-inventory -i inventories/dev/hosts.ini --graph
-ansible-inventory -i inventories/prod/hosts.ini --graph
-```
-
-GitHub Vault Validation:
-```bash
-cd ansible
-export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
-ansible-playbook playbooks/site.yml --syntax-check
-ansible-playbook playbooks/04-deploy-postgresql.yml --syntax-check
-ansible-playbook playbooks/07-deploy-grafana.yml --syntax-check
-```
-
-Validate site playbook against both inventories:
-```bash
+ansible-playbook playbooks/00-preflight.yml --syntax-check
+ansible-playbook playbooks/08-post-deployment-validation.yml --syntax-check
+ansible-playbook playbooks/09-backup-postgresql.yml --syntax-check
+ansible-playbook playbooks/10-restore-postgresql-validation.yml --syntax-check
 ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
 ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
 ```
-Validate preflight and post-deployment playbooks:
+
+Run Terraform validation:
+
+```bash
+cd terraform/azure/basics
+
+terraform fmt
+terraform validate
+terraform plan
+```
+
+---
+
+## Runtime Validation
+
+Ansible full workflow:
 
 ```bash
 cd ansible
 
 export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
 
-ansible-playbook playbooks/00-preflight.yml --syntax-check
-ansible-playbook playbooks/08-post-deployment-validation.yml --syntax-check
+ansible-playbook playbooks/site.yml
+```
+
+Ansible preflight:
+
+```bash
 ansible-playbook playbooks/site.yml --tags preflight
+```
+
+Ansible post-deployment validation:
+
+```bash
 ansible-playbook playbooks/site.yml --tags post_validation
 ```
 
-Validate PostgreSQL backup and restore automation:
+PostgreSQL backup:
 
 ```bash
-cd ansible
-
-export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
-
-ansible-playbook playbooks/09-backup-postgresql.yml --syntax-check
-ansible-playbook playbooks/10-restore-postgresql-validation.yml --syntax-check
 ansible-playbook playbooks/site.yml --tags backup
+```
+
+PostgreSQL restore validation:
+
+```bash
 ansible-playbook playbooks/site.yml --tags restore_validation
 ```
 
-Check backup files:
+Terraform Azure basics workflow:
 
 ```bash
-ansible database -m command -a "ls -lah /var/backups/postgresql/automation_lab"
-```
+cd terraform/azure/basics
 
-Check restore validation database:
-
-```bash
-ansible database -m command -a "sudo -u postgres psql -tAc \"SELECT datname FROM pg_database WHERE datname='automation_lab_restore_validation';\""
-```
----
-
-### Nginx Validation
-
-Validate Nginx HTTP response from Kali WSL:
-
-```bash
-curl -s http://192.168.100.11 | grep "Enterprise Automation Lab"
-curl -s http://192.168.100.12 | grep "Enterprise Automation Lab"
+terraform init
+terraform validate
+terraform plan
+terraform apply
+terraform output
+terraform state list
+terraform destroy
 ```
 
 ---
-
-### PostgreSQL Validation
-
-Validate PostgreSQL service:
-
-```bash
-ansible database -m command -a "systemctl is-active postgresql"
-ansible database -m command -a "systemctl is-enabled postgresql"
-```
-
-Validate PostgreSQL database:
-
-```bash
-ansible database -m command -a "sudo -u postgres psql -tAc \"SELECT datname FROM pg_database WHERE datname='automation_lab';\""
-```
-
----
-
-### Node Exporter Validation
-
-Validate Node Exporter services:
-
-```bash
-ansible linux -m command -a "systemctl is-active node_exporter"
-ansible linux -m command -a "systemctl is-enabled node_exporter"
-```
-
-Validate Node Exporter HTTP endpoints from Kali WSL:
-
-```bash
-curl -s http://192.168.100.11:9100/metrics | head
-curl -s http://192.168.100.12:9100/metrics | head
-curl -s http://192.168.100.21:9100/metrics | head
-curl -s http://192.168.100.31:9100/metrics | head
-```
-
-Expected output contains Prometheus-style metrics:
-
-```text
-# HELP
-# TYPE
-```
-
----
-
-### Prometheus Validation
-
-Validate Prometheus service:
-
-```bash
-ansible monitoring -m command -a "systemctl is-active prometheus"
-ansible monitoring -m command -a "systemctl is-enabled prometheus"
-```
-
-Validate Prometheus readiness endpoint:
-
-```bash
-curl -s http://192.168.100.31:9090/-/ready
-```
-
-Expected output:
-
-```text
-Prometheus Server is Ready.
-```
-
-Validate Prometheus targets API:
-
-```bash
-curl -s http://192.168.100.31:9090/api/v1/targets | head
-```
-
-Open Prometheus UI:
-
-```text
-http://192.168.100.31:9090
-```
-
-Useful Prometheus queries:
-
-```promql
-up
-```
-
-```promql
-node_uname_info
-```
-
-```promql
-node_memory_MemAvailable_bytes
-```
-
----
-
-### Grafana Validation
-
-Validate Grafana service:
-
-```bash
-ansible monitoring -m command -a "systemctl is-active grafana-server"
-ansible monitoring -m command -a "systemctl is-enabled grafana-server"
-```
-
-Validate Grafana health endpoint:
-
-```bash
-curl -s http://192.168.100.31:3000/api/health
-```
-
-Expected output includes:
-
-```text
-"database":"ok"
-```
-
-Open Grafana UI:
-
-```text
-http://192.168.100.31:3000
-```
-
-Default first login:
-
-```text
-username: admin
-password: admin
-```
-
-Validate Prometheus data source:
-
-```text
-Connections -> Data sources -> Prometheus
-```
-
-Validate provisioned dashboard:
-
-```text
-Dashboards -> Enterprise Automation Lab -> Enterprise Linux Overview
-```
-
-Validate dashboard files on `monitor-01`:
-
-```bash
-ansible monitoring -m command -a "ls -la /etc/grafana/provisioning/dashboards"
-ansible monitoring -m command -a "ls -la /var/lib/grafana/dashboards"
-```
-
-Expected files:
-
-```text
-linux-overview.yml
-linux-overview.json
-```
-
-Validate Prometheus query in Grafana:
-
-```text
-Explore -> Prometheus -> up
-```
-
-Expected result:
-
-```text
-1
-```
-
-for healthy scrape targets.
-
----
-
 
 ## GitHub Actions Validation
 
-GitHub Actions automatically runs validation on:
-
-- push to `main`
-- pull request to `main`
-- manual workflow dispatch
+GitHub Actions currently validates the Ansible phase.
 
 Workflow file:
 
@@ -1417,20 +994,21 @@ Workflow file:
 .github/workflows/ansible-validation.yml
 ```
 
-The workflow validates:
+The workflow checks:
 
-- YAML formatting with `yamllint`
-- Ansible best practices with `ansible-lint`
-- required Ansible collection installation from `requirements.yml`
-- syntax of all current Ansible playbooks
+```text
+YAML formatting
+Ansible lint rules
+required Ansible collections
+Ansible playbook syntax
+site.yml syntax with dev inventory
+site.yml syntax with prod inventory
+```
 
-Current playbooks checked by CI:
+Current Ansible playbooks checked by CI:
 
 ```text
 site.yml
-site.yml with default/dev inventory
-site.yml with explicit dev inventory
-site.yml with prod inventory
 00-preflight.yml
 01-bootstrap-linux.yml
 02-apply-linux-baseline.yml
@@ -1444,62 +1022,7 @@ site.yml with prod inventory
 10-restore-postgresql-validation.yml
 ```
 
----
-
-## Current Working Validation Results
-
-The current local lab validates successfully:
-
-```text
-Ansible Vault file encryption:            successful
-Vault password file usage:                successful
-PostgreSQL Vault user creation:           successful
-Grafana Vault admin password management:  successful
-Vault secrets excluded from Git:          successful
-Vault lint and syntax validation:         successful
-Ansible ping to all nodes:              successful
-SSH key login:                          successful
-Linux baseline role:                    successful
-Linux baseline idempotency:             changed=0
-Nginx role:                             successful
-Nginx idempotency:                      changed=0
-Nginx HTTP response:                    successful
-PostgreSQL role:                        successful
-PostgreSQL idempotency:                 changed=0
-PostgreSQL service state:               active and enabled
-PostgreSQL database validation:         automation_lab exists
-Node Exporter role:                     successful
-Node Exporter idempotency:              changed=0
-Node Exporter service state:            active and enabled
-Node Exporter metrics endpoints:        reachable on port 9100
-Prometheus role:                        successful
-Prometheus idempotency:                 changed=0
-Prometheus service state:               active and enabled
-Prometheus readiness endpoint:          successful
-Prometheus targets API:                 successful
-Grafana role:                           successful
-Grafana idempotency:                    changed=0
-Grafana service state:                  active and enabled
-Grafana health endpoint:                successful
-Grafana Prometheus data source:         provisioned
-Grafana dashboard provider:             provisioned
-Enterprise Linux Overview dashboard:    provisioned
-yamllint:                               successful
-ansible-lint:                           successful
-GitHub Actions:                         successful after workflow validation
-Monitoring services final validation:       successful
-Node Exporter endpoints final validation:   successful
-Prometheus targets final validation:        successful
-Prometheus query validation:                successful
-Grafana dashboard final validation:         successful
-End-to-end monitoring chain validation:     successful
-Site playbook syntax check:              successful
-Site playbook tag listing:               successful
-Monitoring tag execution:                successful
-Grafana tag execution:                   successful
-Full site playbook execution:            successful
-Operational tags validation:             successful
-```
+Terraform CI validation is planned for the next Terraform stage.
 
 ---
 
@@ -1509,33 +1032,24 @@ Main documentation files:
 
 | File | Purpose |
 |---|---|
-| `docs/architecture.md` | Lab architecture and design |
-| `docs/runbooks/wsl-control-node-setup.md` | WSL control node setup |
-| `docs/runbooks/hyperv-network-setup.md` | Hyper-V NAT network setup |
-| `docs/runbooks/create-web-01-vm.md` | First VM creation runbook |
-| `docs/runbooks/stage-01-ansible-basics.md` | First Ansible playbook documentation |
-| `docs/runbooks/stage-01-02-ansible-variables.md` | Variables and group_vars documentation |
-| `docs/runbooks/stage-01-03-first-ansible-role.md` | First reusable Ansible role documentation |
-| `docs/runbooks/stage-01-04-ansible-linting.md` | Linting and code quality documentation |
-| `docs/runbooks/stage-01-05-github-actions-validation.md` | GitHub Actions validation pipeline |
-| `docs/runbooks/stage-02-01-create-additional-managed-nodes.md` | Additional VM creation |
-| `docs/runbooks/stage-02-02-apply-baseline-to-all-linux-nodes.md` | Baseline role applied to all nodes |
-| `docs/runbooks/stage-02-03-nginx-role.md` | Nginx role for web servers |
-| `docs/runbooks/stage-02-05-postgresql-role.md` | PostgreSQL role for database server |
-| `docs/runbooks/stage-02-06-node-exporter-role.md` | Prometheus Node Exporter role for Linux metrics |
-| `docs/runbooks/stage-02-07-prometheus-role.md` | Prometheus server role for metrics collection |
-| `docs/runbooks/stage-02-08-grafana-role.md` | Grafana role for metrics visualization |
-| `docs/runbooks/stage-02-09-grafana-dashboard-provisioning.md` | Grafana dashboard provisioning |
-| `docs/runbooks/stage-02-10-monitoring-final-validation.md` | Monitoring stack final validation |
-| `docs/runbooks/stage-03-01-site-playbook-and-tags.md` | Site playbook and operational tags |
-| `docs/runbooks/stage-03-02-ansible-vault-secret-management.md` | Ansible Vault secret management |
-| `docs/runbooks/stage-03-03-environment-separation.md` | Environment separation for dev and prod inventories |
-| `docs/runbooks/stage-03-04-preflight-post-deployment-validation.md` | Preflight and post-deployment validation |
-| `docs/runbooks/stage-03-05-postgresql-backup-restore.md` | PostgreSQL backup and restore automation |
-| `docs/runbooks/stage-03-06-final-ansible-hardening.md` | Final Ansible hardening and cleanup |
-| `docs/runbooks/ansible-operations-guide.md` | Main operational guide for the Ansible workflow |
+| `docs/architecture.md` | General lab architecture and design |
 | `docs/ansible-architecture.md` | Architecture explanation of the Ansible project |
-| `docs/troubleshooting/wsl-to-hyperv-connectivity.md` | WSL to Hyper-V connectivity troubleshooting |
+| `docs/runbooks/ansible-operations-guide.md` | Main operational guide for the Ansible workflow |
+| `docs/runbooks/stage-03-06-final-ansible-hardening.md` | Final Ansible hardening and cleanup |
+| `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
+| `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
+
+Stage runbooks are stored in:
+
+```text
+docs/runbooks/
+```
+
+Troubleshooting documents are stored in:
+
+```text
+docs/troubleshooting/
+```
 
 ---
 
@@ -1565,21 +1079,25 @@ docs/screenshots/stage-03-ansible-vault-secret-management/
 docs/screenshots/stage-03-environment-separation/
 docs/screenshots/stage-03-postgresql-backup-restore/
 docs/screenshots/stage-03-final-ansible-hardening/
+docs/screenshots/stage-04-azure-terraform-basics/
 ```
 
-Screenshots are used as evidence that the local lab was configured and validated successfully.
+Screenshots are used as runtime evidence that the lab was configured and validated successfully.
 
 ---
 
 ## Project Roadmap
 
-Planned next stages:
-
 | Stage | Goal |
 |---|---|
-| Stage 4 | Terraform foundations |
-| Stage 5 | CloudFormation foundations |
-| Stage 6 | CI/CD and final automation platform documentation |
+| Stage 4.2 | Terraform Azure basics documentation, runbook and CI validation |
+| Stage 5.1 | Terraform Azure modules |
+| Stage 5.2 | Terraform Azure environment separation |
+| Stage 5.3 | Terraform remote state with Azure Storage |
+| Stage 5.4 | Terraform security and policy validation |
+| Stage 6.1 | CloudFormation basics with local static validation |
+| Stage 7.1 | CloudFormation advanced templates with static validation |
+| Stage 8 | Final IaC comparison and project summary |
 
 ---
 
@@ -1587,112 +1105,76 @@ Planned next stages:
 
 This project demonstrates practical experience with:
 
-- Ansible Vault secret management
-- Ansible environment separation
-- Ansible pre_tasks and post_tasks
-- preflight infrastructure checks
-- post-deployment validation
-- operational validation tags
-- production-style deployment workflow
-- service validation with Ansible modules
-- dev and prod inventory design
-- inventory-specific group_vars
-- production-like inventory templates
-- environment-specific monitoring targets
-- encrypted local secrets
-- safe Vault example files
-- no_log usage for sensitive tasks
-- Git secret exclusion workflow
-- Linux automation control environment setup
-- Hyper-V private lab networking
-- WSL to Hyper-V connectivity troubleshooting
-- SSH key-based automation access
-- Ansible inventory design
-- Ansible ad-hoc commands
-- Ansible playbooks
-- Ansible roles
-- Ansible collections
-- group_vars and variable separation
-- Jinja2 templates
-- systemd service management
-- idempotent automation
-- multi-node automation
-- service-specific role design
-- PostgreSQL automation
-- Linux metrics exposure with Node Exporter
-- Prometheus metrics collection
-- Prometheus configuration validation with promtool
-- Grafana installation automation
-- Grafana data source provisioning
-- Grafana dashboard provisioning
-- PromQL dashboard panels
-- PostgreSQL backup automation with Ansible
-- timestamped database dumps
-- latest backup symlink management
-- backup retention policy
-- restore validation into a separate database
-- safe manual operational tags with `never`
-- validation of backup usability, not only backup creation
-- monitoring foundation design
-- YAML linting
-- Ansible linting
-- GitHub Actions CI validation
-- infrastructure documentation and runbooks
-- Ansible site playbook design
-- operational tags
-- selective playbook execution
-- centralized Ansible entrypoint
+```text
+Linux automation control environment setup
+Hyper-V private lab networking
+WSL to Hyper-V connectivity troubleshooting
+SSH key-based automation access
+Ansible inventory design
+Ansible playbooks
+Ansible roles
+Ansible collections
+group_vars and variable separation
+Jinja2 templates
+systemd service management
+idempotent automation
+multi-node automation
+Ansible Vault secret management
+Ansible environment separation
+preflight infrastructure checks
+post-deployment validation
+PostgreSQL automation
+PostgreSQL backup automation
+PostgreSQL restore validation
+Node Exporter metrics exposure
+Prometheus metrics collection
+Grafana provisioning
+Grafana dashboard provisioning
+PromQL dashboard panels
+YAML linting
+Ansible linting
+GitHub Actions validation
+Terraform Azure provider usage
+Terraform variables
+Terraform locals
+Terraform outputs
+Terraform state basics
+Terraform plan/apply/destroy workflow
+Azure Resource Group management
+Azure Virtual Network basics
+Azure Subnet basics
+Azure Network Security Group basics
+Azure cost safety workflow
+infrastructure documentation and runbooks
+```
 
 ---
 
 ## Current Status Summary
 
 ```text
-The project has completed the first multi-node automation and monitoring visualization phase.
+The Ansible phase is complete.
 
-The lab can manage all Linux nodes through Ansible using SSH key authentication.
-The Linux baseline role is applied to all nodes.
-The Nginx role is applied to web servers.
-The PostgreSQL role is applied to the database server.
-The Node Exporter role is applied to all Linux nodes.
-All Linux nodes expose Prometheus-compatible metrics on port 9100.
-The Prometheus role is applied to the monitoring server.
-Prometheus collects metrics from all Node Exporter targets.
-The Grafana role is applied to the monitoring server.
-Grafana is connected to Prometheus through provisioning.
-Grafana automatically loads the Enterprise Linux Overview dashboard.
-The full monitoring chain has been validated end-to-end.
-The completed monitoring flow is Node Exporter -> Prometheus -> Grafana -> Dashboard.
-The project passes local linting and GitHub Actions validation.
-The project now includes a central site.yml playbook.
-The full infrastructure stack can be deployed through one main Ansible entrypoint.
-Operational tags allow selective execution of baseline, web, database, monitoring, Grafana and dashboard automation.
-The project now supports separate dev and prod Ansible inventories.
-The dev inventory represents the real local Hyper-V lab.
-The prod inventory is a production-like template for future expansion.
-The same site.yml playbook can be syntax-checked against both inventories.
-Environment-specific variables are separated through inventory group_vars.
-Prometheus targets are now environment-specific.
+The local Hyper-V Linux lab is fully automated with Ansible.
+The project can deploy Linux baseline configuration, Nginx, PostgreSQL, Node Exporter, Prometheus and Grafana.
+The monitoring stack is validated end-to-end.
+Grafana dashboards are provisioned automatically.
+Secrets are handled with Ansible Vault.
+The project supports dev and prod-style inventories.
+The project includes preflight and post-deployment validation.
+The project includes PostgreSQL backup and restore validation.
+The project includes final Ansible operations and architecture documentation.
 
-The project now includes preflight checks before deployment.
-The project now includes post-deployment validation after deployment.
-The main site.yml workflow follows preflight -> deployment -> validation.
-SSH connectivity, sudo access, inventory groups and environment variables are validated before deployment.
-Node Exporter, Nginx, PostgreSQL, Prometheus and Grafana are validated after deployment.
-PostgreSQL validation uses a real SQL query through the community.postgresql collection.
-The project now includes PostgreSQL backup automation.
-The project now creates timestamped SQL dump files.
-The project maintains a latest.sql symlink for the newest backup.
-The project applies backup retention cleanup.
-The project validates restore by restoring the latest backup into a separate validation database.
-The project verifies the restored database with a SQL query.
-Backup and restore validation are integrated into site.yml with the never tag and run only when explicitly requested.
+The Terraform phase has started.
 
-The Ansible phase is now complete.
-The project includes final Ansible operations documentation.
-The project includes final Ansible architecture documentation.
-The project includes final validation evidence for the complete Ansible workflow.
+Terraform is installed and used with AzureRM provider.
+Azure student subscription is used with strict cost safety rules.
+Stage 4.1 creates a safe Azure networking foundation with Resource Group, VNet, Subnet, NSG and NSG association.
+The Terraform workflow demonstrates init, validate, plan, apply, output, state list and destroy.
+Azure resources are destroyed after validation to protect student credits.
 
-
-
+CloudFormation is planned as a future local/static-validation learning phase.
 ```
+
+---
+
