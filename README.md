@@ -17,16 +17,6 @@ local lab foundation
     -> future CloudFormation static validation
 ```
 
-The main goal is to build hands-on skills for roles such as:
-
-```text
-Linux Administrator
-System Administrator
-Infrastructure Engineer
-Junior DevOps Engineer
-Cloud Engineer Trainee
-SRE Trainee
-```
 
 ---
 

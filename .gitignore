@@ -23,7 +23,7 @@ ansible/vault-password.txt
 *.tfstate
 *.tfstate.*
 *.tfvars
-.terraform.lock.hcl
+
 
 # Logs
 *.log
