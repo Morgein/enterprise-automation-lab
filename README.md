@@ -18,10 +18,11 @@ local virtualization
     -> backup and restore validation
     -> Terraform Azure Infrastructure as Code
     -> reusable Terraform module structure
+    -> Terraform environment separation
     -> CI-based static validation
 ```
 
-The main focus of the project is:
+The main technical focus of the project is:
 
 ```text
 infrastructure automation
@@ -32,6 +33,7 @@ backup and restore operations
 Infrastructure as Code
 Azure networking
 Terraform modules
+Terraform environment separation
 CI validation
 technical documentation
 ```
@@ -43,7 +45,7 @@ technical documentation
 Current stage:
 
 ```text
-Stage 5.1 - Terraform Azure Modules
+Stage 5.2 - Terraform Environment Separation
 ```
 
 Ansible phase:
@@ -100,6 +102,7 @@ Planned
 | Stage 4.1 | Terraform Azure basics: Resource Group, VNet, Subnet and NSG | Completed |
 | Stage 4.2 | Terraform validation workflow in GitHub Actions | Completed |
 | Stage 5.1 | Terraform Azure modules: network foundation module and dev environment | Completed |
+| Stage 5.2 | Terraform environment separation with dev and test environments | Completed |
 
 ---
 
@@ -137,7 +140,8 @@ Windows 11 Host
         │
         └── Module-based configuration
             ├── network-foundation module
-            └── dev environment
+            ├── dev environment
+            └── test environment
 ```
 
 ---
@@ -643,15 +647,15 @@ Stage 4.1 resource names:
 
 ## Terraform Azure Modules
 
-Current advanced Terraform stage:
+Terraform module stage:
 
 ```text
 Stage 5.1 - Terraform Azure Modules
 ```
 
-This stage introduces a reusable Terraform module structure.
+This stage introduced a reusable Terraform module structure.
 
-The project now contains:
+The project contains:
 
 ```text
 terraform/azure/modules/network-foundation/
@@ -713,6 +717,55 @@ module.network_foundation.azurerm_subnet_network_security_group_association.main
 ```
 
 This confirms that Azure resources are created through the reusable Terraform module.
+
+---
+
+## Terraform Environment Separation
+
+Current environment separation stage:
+
+```text
+Stage 5.2 - Terraform Environment Separation
+```
+
+The project now contains two module-based Azure environments:
+
+```text
+terraform/azure/environments/dev/
+terraform/azure/environments/test/
+```
+
+Both environments use the same reusable module:
+
+```text
+terraform/azure/modules/network-foundation/
+```
+
+The environments pass different values into the same module.
+
+Environment comparison:
+
+| Setting | Dev | Test |
+|---|---|---|
+| Environment | `dev` | `test` |
+| VNet CIDR | `10.40.0.0/16` | `10.50.0.0/16` |
+| Subnet CIDR | `10.40.1.0/24` | `10.50.1.0/24` |
+| Resource Group | `rg-ea-lab-dev` | `rg-ea-lab-test` |
+| VNet | `vnet-ea-lab-dev` | `vnet-ea-lab-test` |
+| Subnet | `snet-ea-lab-dev-main` | `snet-ea-lab-test-main` |
+| NSG | `nsg-ea-lab-dev-main` | `nsg-ea-lab-test-main` |
+
+This demonstrates that the same Terraform module can create isolated infrastructure patterns for different environments.
+
+For Stage 5.2, the test environment was validated with `terraform plan` only.
+
+Reason:
+
+```text
+Stage 5.1 already validated real Azure deployment through the module.
+Stage 5.2 only needs to prove environment separation and module reuse.
+A test plan is enough to prove that the module generates different test resources.
+```
 
 ---
 
@@ -795,6 +848,18 @@ Terraform dev environment files:
 | `terraform/azure/environments/dev/terraform.tfvars.example` | Safe example values |
 | `terraform/azure/environments/dev/README.md` | Dev environment documentation |
 
+Terraform test environment files:
+
+| File | Purpose |
+|---|---|
+| `terraform/azure/environments/test/versions.tf` | Terraform and provider requirements for test |
+| `terraform/azure/environments/test/providers.tf` | AzureRM provider configuration |
+| `terraform/azure/environments/test/variables.tf` | Test environment variables |
+| `terraform/azure/environments/test/main.tf` | Calls the network foundation module |
+| `terraform/azure/environments/test/outputs.tf` | Exposes module outputs |
+| `terraform/azure/environments/test/terraform.tfvars.example` | Safe example values |
+| `terraform/azure/environments/test/README.md` | Test environment documentation |
+
 Local files not committed:
 
 ```text
@@ -807,6 +872,11 @@ terraform/azure/environments/dev/terraform.tfvars
 terraform/azure/environments/dev/terraform.tfstate
 terraform/azure/environments/dev/terraform.tfstate.backup
 terraform/azure/environments/dev/.terraform/
+
+terraform/azure/environments/test/terraform.tfvars
+terraform/azure/environments/test/terraform.tfstate
+terraform/azure/environments/test/terraform.tfstate.backup
+terraform/azure/environments/test/.terraform/
 ```
 
 Provider lock files can be committed:
@@ -814,6 +884,7 @@ Provider lock files can be committed:
 ```text
 terraform/azure/basics/.terraform.lock.hcl
 terraform/azure/environments/dev/.terraform.lock.hcl
+terraform/azure/environments/test/.terraform.lock.hcl
 ```
 
 Provider lock files keep provider versions reproducible.
@@ -842,6 +913,16 @@ terraform fmt -check -recursive .
 terraform validate
 ```
 
+Terraform test environment validation:
+
+```bash
+cd terraform/azure/environments/test
+
+terraform init -backend=false -input=false
+terraform fmt -check -recursive .
+terraform validate
+```
+
 Terraform plan for dev environment:
 
 ```bash
@@ -850,10 +931,34 @@ cd terraform/azure/environments/dev
 terraform plan
 ```
 
-Expected Stage 5.1 plan:
+Terraform plan for test environment:
+
+```bash
+cd terraform/azure/environments/test
+
+terraform plan
+```
+
+Expected Stage 5.2 test plan:
 
 ```text
 Plan: 5 to add, 0 to change, 0 to destroy.
+```
+
+Expected test resource names:
+
+```text
+rg-ea-lab-test
+vnet-ea-lab-test
+snet-ea-lab-test-main
+nsg-ea-lab-test-main
+```
+
+Expected test CIDR values:
+
+```text
+10.50.0.0/16
+10.50.1.0/24
 ```
 
 Expected module-based resources:
@@ -888,18 +993,6 @@ Destroy resources:
 
 ```bash
 terraform destroy
-```
-
-Expected apply result:
-
-```text
-Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
-```
-
-Expected destroy result:
-
-```text
-Destroy complete! Resources: 5 destroyed.
 ```
 
 ---
@@ -952,6 +1045,7 @@ No AWS paid deployment is planned at the current stage.
 | PromQL | Metrics query language |
 | Terraform | Infrastructure as Code |
 | Terraform Modules | Reusable Infrastructure as Code structure |
+| Terraform Environments | Environment-specific Infrastructure as Code structure |
 | AzureRM Provider | Terraform provider for Azure |
 | Azure Student Subscription | Cloud practice environment |
 | Azure Resource Group | Azure resource container |
@@ -1004,7 +1098,8 @@ enterprise-automation-lab/
 │   ├── azure/
 │   │   ├── basics/
 │   │   ├── environments/
-│   │   │   └── dev/
+│   │   │   ├── dev/
+│   │   │   └── test/
 │   │   └── modules/
 │   │       └── network-foundation/
 │   └── docs/
@@ -1080,6 +1175,15 @@ terraform init -backend=false -input=false
 terraform validate
 ```
 
+Run Terraform test environment validation:
+
+```bash
+cd terraform/azure/environments/test
+
+terraform init -backend=false -input=false
+terraform validate
+```
+
 ---
 
 ## Runtime Validation
@@ -1146,6 +1250,18 @@ terraform state list
 terraform destroy
 ```
 
+Terraform Azure module-based test workflow:
+
+```bash
+cd terraform/azure/environments/test
+
+terraform init
+terraform validate
+terraform plan
+```
+
+For Stage 5.2, the test environment uses plan-only validation.
+
 ---
 
 ## GitHub Actions Validation
@@ -1204,6 +1320,8 @@ terraform init -backend=false for terraform/azure/basics
 terraform validate for terraform/azure/basics
 terraform init -backend=false for terraform/azure/environments/dev
 terraform validate for terraform/azure/environments/dev
+terraform init -backend=false for terraform/azure/environments/test
+terraform validate for terraform/azure/environments/test
 ```
 
 The workflow does not run:
@@ -1230,10 +1348,12 @@ Main documentation files:
 | `docs/runbooks/stage-03-06-final-ansible-hardening.md` | Final Ansible hardening and cleanup |
 | `docs/runbooks/stage-04-01-terraform-azure-basics.md` | Terraform Azure basics stage runbook |
 | `docs/runbooks/stage-05-01-terraform-azure-modules.md` | Terraform Azure modules stage runbook |
+| `docs/runbooks/stage-05-02-terraform-environment-separation.md` | Terraform environment separation stage runbook |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
 | `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
 | `terraform/azure/modules/network-foundation/README.md` | Network foundation module documentation |
 | `terraform/azure/environments/dev/README.md` | Terraform dev environment documentation |
+| `terraform/azure/environments/test/README.md` | Terraform test environment documentation |
 
 Stage runbooks are stored in:
 
@@ -1278,6 +1398,7 @@ docs/screenshots/stage-03-final-ansible-hardening/
 docs/screenshots/stage-04-azure-terraform-basics/
 docs/screenshots/stage-04-terraform-validation/
 docs/screenshots/stage-05-terraform-azure-modules/
+docs/screenshots/stage-05-terraform-environment-separation/
 ```
 
 Stage 5.1 screenshots:
@@ -1291,6 +1412,13 @@ docs/screenshots/stage-05-terraform-azure-modules/
 └── 05-azure-portal-module-vnet-subnet-nsg.png
 ```
 
+Stage 5.2 screenshots:
+
+```text
+docs/screenshots/stage-05-terraform-environment-separation/
+└── 01-terraform-test-environment-plan.png
+```
+
 Screenshots are used as runtime evidence that the lab was configured and validated successfully.
 
 ---
@@ -1299,7 +1427,6 @@ Screenshots are used as runtime evidence that the lab was configured and validat
 
 | Stage | Goal |
 |---|---|
-| Stage 5.2 | Terraform environment separation |
 | Stage 5.3 | Terraform remote state with Azure Storage |
 | Stage 5.4 | Terraform security and policy validation |
 | Stage 6.1 | CloudFormation basics with local static validation |
@@ -1352,6 +1479,8 @@ Terraform root modules
 Terraform child modules
 Terraform module inputs
 Terraform module outputs
+Terraform environment separation
+Terraform CI validation
 Azure Resource Group management
 Azure Virtual Network basics
 Azure Subnet basics
@@ -1384,6 +1513,7 @@ Azure student subscription is used with strict cost safety rules.
 Stage 4.1 created a safe Azure networking foundation with Resource Group, VNet, Subnet, NSG and NSG association.
 Stage 4.2 added Terraform validation through GitHub Actions.
 Stage 5.1 introduced a reusable network-foundation module and a dev environment that calls this module.
+Stage 5.2 added test environment separation using the same network-foundation module with separate CIDR values and resource names.
 The Terraform workflow demonstrates init, validate, plan, apply, output, state list and destroy.
 Azure resources are destroyed after validation to protect student credits.
 
@@ -1391,4 +1521,3 @@ CloudFormation is planned as a future local/static-validation learning phase.
 ```
 
 ---
-
