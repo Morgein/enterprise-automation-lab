@@ -1,0 +1,53 @@
+---
+name: Terraform Security Validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".tflint.hcl"
+      - ".github/workflows/terraform-security-validation.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".tflint.hcl"
+      - ".github/workflows/terraform-security-validation.yml"
+
+  workflow_dispatch:
+
+jobs:
+  terraform-security-validation:
+    name: Terraform Security Validation
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_subscription_id: "00000000-0000-0000-0000-000000000000"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Initialize TFLint plugins
+        run: tflint --init
+
+      - name: Run TFLint recursively
+        run: tflint --recursive --config .tflint.hcl
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov Terraform scan
+        run: checkov -d terraform --framework terraform --quiet --soft-fail

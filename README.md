@@ -2,6 +2,7 @@
 
 [![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
 [![Terraform Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml)
+[![Terraform Security Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-security-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-security-validation.yml)
 
 ## Project Overview
 
@@ -47,7 +48,7 @@ technical documentation
 Current stage:
 
 ```text
-Stage 5.3 - Terraform Remote State with Azure Storage
+Stage 5.4 - Terraform Security and Policy Validation
 ```
 
 Ansible phase:
@@ -106,6 +107,7 @@ Planned
 | Stage 5.1 | Terraform Azure modules: network foundation module and dev environment | Completed |
 | Stage 5.2 | Terraform environment separation with dev and test environments | Completed |
 | Stage 5.3 | Terraform remote state with Azure Storage | Completed |
+| Stage 5.4 | Terraform security and policy validation with TFLint and Checkov | Completed |
 
 ---
 
@@ -890,6 +892,74 @@ Expected remote state blob:
 ```text
 dev.terraform.tfstate
 ```
+---
+
+## Terraform Security and Policy Validation
+
+Current security validation stage:
+
+```text
+Stage 5.4 - Terraform Security and Policy Validation
+```
+
+This stage adds static security and policy validation for Terraform code.
+
+The project uses:
+
+```text
+TFLint
+Checkov
+GitHub Actions
+```
+
+TFLint is used for Terraform linting and Azure-specific validation.
+
+Checkov is used for Infrastructure-as-Code security and compliance scanning.
+
+Security validation workflow:
+
+```text
+.github/workflows/terraform-security-validation.yml
+```
+
+TFLint configuration:
+
+```text
+.tflint.hcl
+```
+
+Security documentation:
+
+```text
+docs/security/terraform-security-validation.md
+```
+
+The security workflow runs:
+
+```text
+tflint --init
+tflint --recursive --config .tflint.hcl
+checkov -d terraform --framework terraform --quiet --soft-fail
+```
+
+The workflow does not run:
+
+```text
+terraform plan
+terraform apply
+terraform destroy
+```
+
+This means the security workflow does not create or modify Azure resources.
+
+Checkov currently runs in advisory mode:
+
+```text
+--soft-fail
+```
+
+This allows the project to collect a security baseline without breaking CI immediately.
+
 
 ---
 
@@ -1207,6 +1277,8 @@ No AWS paid deployment is planned at the current stage.
 | yamllint | YAML validation |
 | ansible-lint | Ansible best-practice validation |
 | GitHub Actions | Static CI validation |
+| TFLint | Terraform linting and Azure-specific static checks |
+| Checkov | Infrastructure-as-Code security and policy scanning |
 | AWS CloudFormation | Planned AWS-native IaC static validation |
 
 ---
@@ -1523,7 +1595,27 @@ terraform destroy
 ```
 
 This prevents Azure deployment from CI and keeps the workflow cost-safe.
+---
 
+### Terraform Security Validation
+
+Workflow file:
+
+```text
+.github/workflows/terraform-security-validation.yml
+```
+
+The Terraform security workflow checks:
+
+```text
+TFLint Terraform rules
+TFLint AzureRM rules
+Checkov Terraform security policies
+```
+
+The workflow runs in static analysis mode only.
+
+It does not authenticate to Azure and does not deploy resources.
 ---
 
 ## Documentation
@@ -1540,6 +1632,7 @@ Main documentation files:
 | `docs/runbooks/stage-05-01-terraform-azure-modules.md` | Terraform Azure modules stage runbook |
 | `docs/runbooks/stage-05-02-terraform-environment-separation.md` | Terraform environment separation stage runbook |
 | `docs/runbooks/stage-05-03-terraform-remote-state.md` | Terraform remote state stage runbook |
+| `docs/security/terraform-security-validation.md` | Terraform security and policy validation documentation |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
 | `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
 | `terraform/azure/modules/network-foundation/README.md` | Network foundation module documentation |
@@ -1632,7 +1725,6 @@ Screenshots are used as runtime evidence that the lab was configured and validat
 
 | Stage | Goal |
 |---|---|
-| Stage 5.4 | Terraform security and policy validation |
 | Stage 6.1 | CloudFormation basics with local static validation |
 | Stage 7.1 | CloudFormation advanced templates with static validation |
 | Stage 8 | Final IaC comparison and project summary |
@@ -1725,6 +1817,7 @@ Stage 5.2 added test environment separation using the same network-foundation mo
 Stage 5.3 added Terraform remote state with Azure Storage and validated the dev environment state blob in Azure Portal.
 The Terraform workflow demonstrates init, validate, plan, apply, output, state list, destroy and remote backend initialization.
 Azure resources are destroyed after validation to protect student credits.
+Stage 5.4 added Terraform security and policy validation with TFLint, Checkov and a dedicated GitHub Actions workflow.
 
 CloudFormation is planned as a future local/static-validation learning phase.
 ```
