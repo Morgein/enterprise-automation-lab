@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-**Enterprise Automation Lab** is a practical infrastructure automation project built around a local Hyper-V Linux lab, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, Terraform-based Azure Infrastructure as Code practice, and AWS CloudFormation static validation.
+**Enterprise Automation Lab** is a practical infrastructure automation project focused on Linux system administration, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, Terraform-based Azure Infrastructure as Code, AWS CloudFormation static validation, CI validation, and structured technical documentation.
 
 The project demonstrates a complete infrastructure automation workflow:
 
@@ -17,7 +17,7 @@ local virtualization
     -> SSH-based automation access
     -> Ansible configuration management
     -> monitoring automation
-    -> backup and restore validation
+    -> PostgreSQL backup and restore validation
     -> Terraform Azure Infrastructure as Code
     -> reusable Terraform module structure
     -> Terraform environment separation
@@ -25,28 +25,26 @@ local virtualization
     -> Terraform security and policy validation
     -> CloudFormation basics static validation
     -> CloudFormation advanced static validation
+    -> final IaC comparison and architecture summary
     -> CI-based validation
 ```
 
-The main technical focus of the project is:
+The project combines several infrastructure automation areas:
 
 ```text
-infrastructure automation
+Linux administration
 configuration management
 monitoring
-validation
 backup and restore operations
 Infrastructure as Code
 Azure networking
 Terraform modules
-Terraform environment separation
 Terraform remote state
 Terraform security validation
-AWS CloudFormation template structure
-CloudFormation static validation
-CloudFormation security baseline templates
-CI validation
+AWS CloudFormation template validation
+GitHub Actions CI
 technical documentation
+cost safety
 ```
 
 ---
@@ -56,26 +54,21 @@ technical documentation
 Current stage:
 
 ```text
-Stage 7.1 - CloudFormation Advanced Templates with Static Validation
+Stage 8 - Final IaC Comparison and Project Summary
 ```
 
-Ansible phase:
+Project phase status:
 
-```text
-Completed
-```
-
-Terraform phase:
-
-```text
-Completed advanced baseline
-```
-
-CloudFormation phase:
-
-```text
-Completed advanced static validation baseline
-```
+| Area | Status |
+|---|---|
+| Ansible automation | Completed |
+| Monitoring automation | Completed |
+| PostgreSQL backup and restore validation | Completed |
+| Terraform Azure IaC | Completed advanced baseline |
+| Terraform security validation | Completed |
+| CloudFormation basics | Completed |
+| CloudFormation advanced | Completed |
+| Final documentation | Completed |
 
 ---
 
@@ -118,6 +111,7 @@ Completed advanced static validation baseline
 | Stage 5.4 | Terraform security and policy validation with TFLint and Checkov | Completed |
 | Stage 6.1 | CloudFormation basics with local static validation | Completed |
 | Stage 7.1 | CloudFormation advanced templates with static validation | Completed |
+| Stage 8 | Final IaC comparison and project summary | Completed |
 
 ---
 
@@ -134,11 +128,13 @@ Windows 11 Host
 │       ├── Ansible
 │       ├── Terraform
 │       ├── Azure CLI
-│       ├── cfn-lint
+│       ├── yamllint
 │       ├── ansible-lint
-│       └── yamllint
+│       ├── TFLint
+│       ├── Checkov
+│       └── cfn-lint
 │
-├── Hyper-V
+├── Hyper-V Local Lab
 │   └── Internal NAT Network: 192.168.100.0/24
 │       ├── web-01      192.168.100.11
 │       ├── web-02      192.168.100.12
@@ -146,52 +142,34 @@ Windows 11 Host
 │       └── monitor-01  192.168.100.31
 │
 ├── Azure Student Subscription
-│   └── Terraform Azure Infrastructure as Code
-│       ├── Basics configuration
-│       │   ├── Resource Group
-│       │   ├── Virtual Network
-│       │   ├── Subnet
-│       │   ├── Network Security Group
-│       │   └── Subnet to NSG association
-│       │
-│       ├── Module-based configuration
-│       │   ├── network-foundation module
-│       │   ├── dev environment
-│       │   └── test environment
-│       │
-│       └── Remote state backend
-│           ├── Resource Group
-│           ├── Storage Account
-│           ├── Blob Container
-│           └── dev.terraform.tfstate blob
+│   └── Terraform-managed Azure resources
+│       ├── Resource Groups
+│       ├── Virtual Networks
+│       ├── Subnets
+│       ├── Network Security Groups
+│       ├── Storage Account
+│       ├── Blob Container
+│       └── Remote Terraform state
 │
-└── CloudFormation Static Validation
-    └── AWS-native IaC templates
-        ├── basics/
-        │   └── networking-basic.yml
-        │       ├── VPC
-        │       ├── Subnets
-        │       ├── Security Group
-        │       ├── Parameters
-        │       ├── Mappings
-        │       ├── Conditions
-        │       └── Outputs
-        │
-        └── advanced/
-            └── security-baseline.yml
-                ├── Metadata
-                ├── Rules
-                ├── S3 security baseline
-                ├── S3 bucket policy
-                ├── IAM managed policy
-                ├── DeletionPolicy
-                ├── UpdateReplacePolicy
-                └── advanced Outputs
+├── AWS CloudFormation Templates
+│   └── Static validation only
+│       ├── Basic networking template
+│       └── Advanced security baseline template
+│
+└── GitHub Repository
+    └── CI validation and documentation
+        ├── Ansible validation
+        ├── Terraform validation
+        ├── Terraform security validation
+        ├── CloudFormation validation
+        ├── Runbooks
+        ├── Architecture documentation
+        └── Validation screenshots
 ```
 
 ---
 
-## Local Hyper-V Lab Architecture
+## Local Hyper-V Lab
 
 The local lab uses a dedicated Hyper-V internal NAT network.
 
@@ -214,38 +192,100 @@ Node IP plan:
 
 ---
 
-## Service Architecture
+## Ansible Automation
+
+The Ansible phase automates Linux configuration and service deployment across the local Hyper-V lab.
+
+Ansible is used for:
 
 ```text
-Kali Linux WSL
-    |
-    | Ansible over SSH
-    v
-Hyper-V Linux Nodes
-    |
-    ├── web-01
-    │   ├── Linux baseline
-    │   ├── Nginx
-    │   └── Node Exporter
-    │
-    ├── web-02
-    │   ├── Linux baseline
-    │   ├── Nginx
-    │   └── Node Exporter
-    │
-    ├── db-01
-    │   ├── Linux baseline
-    │   ├── PostgreSQL
-    │   ├── PostgreSQL backup automation
-    │   ├── PostgreSQL restore validation
-    │   └── Node Exporter
-    │
-    └── monitor-01
-        ├── Linux baseline
-        ├── Node Exporter
-        ├── Prometheus
-        └── Grafana
+Linux baseline configuration
+Nginx web server deployment
+PostgreSQL database deployment
+Node Exporter metrics agent deployment
+Prometheus monitoring server deployment
+Grafana deployment
+Grafana datasource provisioning
+Grafana dashboard provisioning
+PostgreSQL backup automation
+PostgreSQL restore validation
+preflight checks
+post-deployment validation
 ```
+
+Main Ansible entrypoint:
+
+```text
+ansible/playbooks/site.yml
+```
+
+Normal deployment workflow:
+
+```text
+preflight
+    -> Linux baseline
+    -> Nginx
+    -> PostgreSQL
+    -> Node Exporter
+    -> Prometheus
+    -> Grafana
+    -> post-deployment validation
+```
+
+---
+
+## Ansible Inventory
+
+Development inventory:
+
+```text
+ansible/inventories/dev/hosts.ini
+```
+
+Current dev inventory:
+
+```ini
+[web]
+web-01 ansible_host=192.168.100.11
+web-02 ansible_host=192.168.100.12
+
+[database]
+db-01 ansible_host=192.168.100.21
+
+[monitoring]
+monitor-01 ansible_host=192.168.100.31
+
+[linux:children]
+web
+database
+monitoring
+
+[linux:vars]
+ansible_user=automation
+ansible_ssh_private_key_file=~/.ssh/enterprise_automation_lab
+```
+
+Production-like inventory:
+
+```text
+ansible/inventories/prod/hosts.ini
+```
+
+The prod inventory is included for syntax validation and future expansion. It is not used for active runtime deployment in this lab.
+
+---
+
+## Ansible Roles
+
+| Role | Purpose |
+|---|---|
+| `linux_baseline` | Common Linux baseline configuration |
+| `nginx` | Nginx installation and web page deployment |
+| `postgresql` | PostgreSQL installation, database and user management |
+| `node_exporter` | Node Exporter metrics agent deployment |
+| `prometheus` | Prometheus monitoring server deployment |
+| `grafana` | Grafana installation, datasource and dashboard provisioning |
+| `postgresql_backup` | PostgreSQL backup and restore validation automation |
 
 ---
 
@@ -305,7 +345,7 @@ Provisioned Grafana dashboard:
 |---|---|---|
 | `Enterprise Automation Lab` | `Enterprise Linux Overview` | Linux infrastructure metrics overview |
 
-Current dashboard panels:
+Dashboard panels:
 
 ```text
 Node Exporter Targets UP
@@ -318,219 +358,7 @@ Network Receive Traffic
 
 ---
 
-## Ansible Phase Summary
-
-The Ansible phase is complete.
-
-It includes:
-
-```text
-multi-node inventory
-dev/prod inventory separation
-Linux baseline automation
-Nginx automation
-PostgreSQL automation
-Node Exporter automation
-Prometheus automation
-Grafana automation
-Grafana dashboard provisioning
-Ansible Vault secret management
-preflight checks
-post-deployment validation
-PostgreSQL backup automation
-PostgreSQL restore validation
-GitHub Actions static validation
-operations guide
-architecture documentation
-runtime validation screenshots
-```
-
-Main Ansible entrypoint:
-
-```text
-ansible/playbooks/site.yml
-```
-
-Normal deployment workflow:
-
-```text
-preflight
-    -> Linux baseline
-    -> Nginx
-    -> PostgreSQL
-    -> Node Exporter
-    -> Prometheus
-    -> Grafana
-    -> post-deployment validation
-```
-
-Manual operational tasks:
-
-```text
-PostgreSQL backup
-PostgreSQL restore validation
-```
-
-These are protected by the `never` tag and run only when explicitly requested.
-
----
-
-## Ansible Inventory
-
-Development inventory:
-
-```text
-ansible/inventories/dev/hosts.ini
-```
-
-Current dev inventory:
-
-```ini
-[web]
-web-01 ansible_host=192.168.100.11
-web-02 ansible_host=192.168.100.12
-
-[database]
-db-01 ansible_host=192.168.100.21
-
-[monitoring]
-monitor-01 ansible_host=192.168.100.31
-
-[linux:children]
-web
-database
-monitoring
-
-[linux:vars]
-ansible_user=automation
-ansible_ssh_private_key_file=~/.ssh/enterprise_automation_lab
-```
-
-Production-like inventory:
-
-```text
-ansible/inventories/prod/hosts.ini
-```
-
-The prod inventory is a template for syntax validation and future expansion. It is not currently used for runtime deployment.
-
----
-
-## Ansible Roles
-
-| Role | Purpose |
-|---|---|
-| `linux_baseline` | Common Linux baseline configuration |
-| `nginx` | Nginx installation and web page deployment |
-| `postgresql` | PostgreSQL installation, database and user management |
-| `node_exporter` | Node Exporter metrics agent deployment |
-| `prometheus` | Prometheus monitoring server deployment |
-| `grafana` | Grafana installation, datasource and dashboard provisioning |
-| `postgresql_backup` | PostgreSQL backup and restore validation automation |
-
----
-
-## Ansible Playbooks
-
-| Playbook | Purpose |
-|---|---|
-| `ansible/playbooks/site.yml` | Main operational playbook |
-| `ansible/playbooks/00-preflight.yml` | Validates inventory, environment variables, SSH and sudo before deployment |
-| `ansible/playbooks/01-bootstrap-linux.yml` | Initial bootstrap playbook |
-| `ansible/playbooks/02-apply-linux-baseline.yml` | Applies Linux baseline role |
-| `ansible/playbooks/03-deploy-nginx.yml` | Deploys Nginx to web servers |
-| `ansible/playbooks/04-deploy-postgresql.yml` | Deploys PostgreSQL to database server |
-| `ansible/playbooks/05-deploy-node-exporter.yml` | Deploys Node Exporter to all Linux nodes |
-| `ansible/playbooks/06-deploy-prometheus.yml` | Deploys Prometheus to the monitoring node |
-| `ansible/playbooks/07-deploy-grafana.yml` | Deploys Grafana and dashboards |
-| `ansible/playbooks/08-post-deployment-validation.yml` | Validates services and endpoints after deployment |
-| `ansible/playbooks/09-backup-postgresql.yml` | Creates timestamped PostgreSQL backups |
-| `ansible/playbooks/10-restore-postgresql-validation.yml` | Restores latest backup into a validation database and verifies SQL access |
-
----
-
-## Ansible Vault
-
-The project uses Ansible Vault for local secret management.
-
-Encrypted local Vault files:
-
-```text
-ansible/inventories/dev/group_vars/all/vault.yml
-ansible/inventories/prod/group_vars/all/vault.yml
-```
-
-Local Vault password file:
-
-```text
-ansible/.vault_pass.txt
-```
-
-These files are excluded from Git.
-
-Safe example file:
-
-```text
-ansible/examples/vault.yml.example
-```
-
-Vault-managed values:
-
-```text
-PostgreSQL application user password
-Grafana admin password
-```
-
-Before running Vault-dependent playbooks locally:
-
-```bash
-cd ansible
-export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
-```
-
----
-
-## Preflight and Post-deployment Validation
-
-The Ansible workflow includes:
-
-```text
-preflight -> deployment -> post-deployment validation
-```
-
-Preflight validates:
-
-```text
-environment variables
-required inventory groups
-SSH connectivity
-Ansible user variable
-passwordless sudo access
-```
-
-Post-deployment validation checks:
-
-```text
-Node Exporter service and metrics endpoint
-Nginx HTTP response and page content
-PostgreSQL service unit and SQL query
-Prometheus service and readiness endpoint
-Grafana service and health endpoint
-```
-
-Useful commands:
-
-```bash
-cd ansible
-
-ansible-playbook playbooks/site.yml --tags preflight
-ansible-playbook playbooks/site.yml --tags post_validation
-ansible-playbook playbooks/site.yml --tags validation
-```
-
----
-
-## PostgreSQL Backup and Restore Automation
+## PostgreSQL Backup and Restore Validation
 
 The project includes PostgreSQL backup and restore validation automation.
 
@@ -556,20 +384,6 @@ run SQL query against restored database
 verify restored database is queryable
 ```
 
-Manual backup:
-
-```bash
-cd ansible
-ansible-playbook playbooks/site.yml --tags backup
-```
-
-Manual restore validation:
-
-```bash
-cd ansible
-ansible-playbook playbooks/site.yml --tags restore_validation
-```
-
 Backup location on `db-01`:
 
 ```text
@@ -588,19 +402,66 @@ Restore validation database:
 automation_lab_restore_validation
 ```
 
+Manual backup:
+
+```bash
+cd ansible
+ansible-playbook playbooks/site.yml --tags backup
+```
+
+Manual restore validation:
+
+```bash
+cd ansible
+ansible-playbook playbooks/site.yml --tags restore_validation
+```
+
 ---
 
-## Terraform Azure Phase
+## Ansible Vault
 
-The Terraform phase introduces Azure Infrastructure as Code practice.
+The project uses Ansible Vault for local secret management.
 
-The project uses Azure student credits, so every Azure deployment follows strict cost safety rules.
-
-Main rule:
+Vault-managed values:
 
 ```text
-Create resources -> validate resources -> take screenshots -> destroy resources
+PostgreSQL application user password
+Grafana admin password
 ```
+
+Encrypted local Vault files:
+
+```text
+ansible/inventories/dev/group_vars/all/vault.yml
+ansible/inventories/prod/group_vars/all/vault.yml
+```
+
+Local Vault password file:
+
+```text
+ansible/.vault_pass.txt
+```
+
+These files are excluded from Git.
+
+Safe example file:
+
+```text
+ansible/examples/vault.yml.example
+```
+
+Before running Vault-dependent playbooks locally:
+
+```bash
+cd ansible
+export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
+```
+
+---
+
+## Terraform Azure Infrastructure as Code
+
+The Terraform phase introduces Azure Infrastructure as Code.
 
 Terraform is used to practice:
 
@@ -631,19 +492,13 @@ Ansible = configures servers and services
 
 ## Terraform Azure Basics
 
-Terraform basics stage:
-
-```text
-Stage 4.1 - Terraform Azure Basics
-```
-
 Terraform basics directory:
 
 ```text
 terraform/azure/basics/
 ```
 
-Resources created in Stage 4.1:
+Resources created during validation:
 
 ```text
 Resource Group
@@ -660,19 +515,6 @@ Reason:
 ```text
 VMs can consume credits if left running.
 The first Terraform Azure stage focuses on networking and safe Terraform workflow.
-```
-
-Terraform workflow demonstrated:
-
-```text
-terraform init
-terraform fmt
-terraform validate
-terraform plan
-terraform apply
-terraform output
-terraform state list
-terraform destroy
 ```
 
 Azure region used after subscription policy validation:
@@ -692,32 +534,12 @@ Stage 4.1 resource names:
 
 ---
 
-## Terraform Azure Modules
+## Terraform Modules
 
-Terraform module stage:
-
-```text
-Stage 5.1 - Terraform Azure Modules
-```
-
-This stage introduced a reusable Terraform module structure.
-
-The project contains:
+Terraform module directory:
 
 ```text
 terraform/azure/modules/network-foundation/
-terraform/azure/environments/dev/
-```
-
-The module directory contains reusable infrastructure logic.
-
-The environment directory contains concrete values for a specific deployment.
-
-In simple terms:
-
-```text
-module = how to create infrastructure
-environment = with which values to create it
 ```
 
 The `network-foundation` module creates:
@@ -730,13 +552,11 @@ Network Security Group
 Subnet to Network Security Group association
 ```
 
-The `dev` environment calls this module with dev-specific values:
+The module separates reusable infrastructure logic from environment-specific values.
 
 ```text
-environment = dev
-location = swedencentral
-address_space = 10.40.0.0/16
-subnet_address_prefixes = 10.40.1.0/24
+module = how to create infrastructure
+environment = with which values to create it
 ```
 
 Module call flow:
@@ -753,25 +573,9 @@ terraform/azure/modules/network-foundation/
 Azure networking resources
 ```
 
-Module-based Terraform state addresses:
-
-```text
-module.network_foundation.azurerm_resource_group.main
-module.network_foundation.azurerm_virtual_network.main
-module.network_foundation.azurerm_subnet.main
-module.network_foundation.azurerm_network_security_group.main
-module.network_foundation.azurerm_subnet_network_security_group_association.main
-```
-
 ---
 
 ## Terraform Environment Separation
-
-Terraform environment separation stage:
-
-```text
-Stage 5.2 - Terraform Environment Separation
-```
 
 The project contains two module-based Azure environments:
 
@@ -798,38 +602,20 @@ Environment comparison:
 | Subnet | `snet-ea-lab-dev-main` | `snet-ea-lab-test-main` |
 | NSG | `nsg-ea-lab-dev-main` | `nsg-ea-lab-test-main` |
 
-For Stage 5.2, the test environment was validated with `terraform plan` only.
+The test environment was validated with `terraform plan` only.
 
 Reason:
 
 ```text
-Stage 5.1 already validated real Azure deployment through the module.
-Stage 5.2 only needs to prove environment separation and module reuse.
+The dev environment already validated real Azure deployment through the module.
+The test environment demonstrates separation and module reuse without additional unnecessary deployment.
 ```
 
 ---
 
 ## Terraform Remote State
 
-Remote state stage:
-
-```text
-Stage 5.3 - Terraform Remote State with Azure Storage
-```
-
-This stage introduced Terraform remote state using Azure Storage.
-
-Before this stage, Terraform state was stored locally:
-
-```text
-terraform.tfstate
-```
-
-After this stage, the `dev` environment can store its Terraform state in Azure Storage:
-
-```text
-dev.terraform.tfstate
-```
+Terraform remote state is implemented with Azure Storage.
 
 Remote state bootstrap directory:
 
@@ -844,14 +630,6 @@ Resource Group
 Storage Account
 Blob Container
 ```
-
-Remote state backend resources:
-
-| Resource | Purpose |
-|---|---|
-| Resource Group | Holds Terraform remote state resources |
-| Storage Account | Stores Terraform state blobs |
-| Blob Container | Stores `.tfstate` files |
 
 Remote state flow:
 
@@ -871,7 +649,7 @@ terraform/azure/environments/dev/
 dev.terraform.tfstate
 ```
 
-The `dev` environment contains:
+The dev environment contains:
 
 ```text
 backend.tf
@@ -886,32 +664,26 @@ backend.hcl
 
 This file is not committed to Git.
 
-Stage 5.3 validated:
+Remote state resources are protected from accidental deletion with:
+
+```hcl
+lifecycle {
+  prevent_destroy = true
+}
+```
+
+Protected resources:
 
 ```text
-remote state bootstrap plan
-remote state bootstrap apply
-Azure Storage Account creation
-Blob Container creation
-dev environment backend initialization
-dev environment plan with remote backend
-dev environment apply with remote state
-Terraform state blob visible in Azure Portal
+azurerm_storage_account.tfstate
+azurerm_storage_container.tfstate
 ```
 
 ---
 
 ## Terraform Security and Policy Validation
 
-Terraform security validation stage:
-
-```text
-Stage 5.4 - Terraform Security and Policy Validation
-```
-
-This stage added static security and policy validation for Terraform code.
-
-The project uses:
+Terraform security validation uses:
 
 ```text
 TFLint
@@ -954,14 +726,6 @@ Security documentation:
 docs/security/terraform-security-validation.md
 ```
 
-The security workflow runs:
-
-```text
-tflint --init --config .tflint.hcl
-TFLint checks for Terraform root directories
-checkov -d terraform --framework terraform --quiet --soft-fail
-```
-
 The security workflow does not run:
 
 ```text
@@ -976,28 +740,13 @@ Checkov currently runs in advisory mode:
 --soft-fail
 ```
 
-Remote state resources are protected from accidental deletion with:
-
-```hcl
-lifecycle {
-  prevent_destroy = true
-}
-```
-
-Protected resources:
-
-```text
-azurerm_storage_account.tfstate
-azurerm_storage_container.tfstate
-```
-
 ---
 
-## CloudFormation Phase
+## CloudFormation Static Validation
 
-CloudFormation is introduced as AWS-native Infrastructure as Code practice.
+CloudFormation is included as AWS-native Infrastructure as Code practice.
 
-The current CloudFormation phase is static-validation only.
+The CloudFormation phase is static-validation only.
 
 No AWS resources are deployed.
 
@@ -1005,35 +754,27 @@ No AWS credentials are required.
 
 No AWS costs are generated.
 
-CloudFormation validation tool:
+Validation tool:
 
 ```text
 cfn-lint
 ```
 
-CloudFormation validation workflow:
+Validation workflow:
 
 ```text
 .github/workflows/cloudformation-validation.yml
 ```
 
-The workflow installs `cfn-lint` and validates all CloudFormation YAML templates inside:
+The workflow validates all CloudFormation YAML templates inside:
 
 ```text
 cloudformation/
 ```
 
-The workflow does not deploy stacks.
-
 ---
 
 ## CloudFormation Basics
-
-CloudFormation basics stage:
-
-```text
-Stage 6.1 - CloudFormation Basics with Local Static Validation
-```
 
 CloudFormation basics directory:
 
@@ -1041,7 +782,7 @@ CloudFormation basics directory:
 cloudformation/basics/
 ```
 
-Current template:
+Template:
 
 ```text
 cloudformation/basics/networking-basic.yml
@@ -1077,17 +818,9 @@ Validation command:
 cfn-lint cloudformation/basics/networking-basic.yml
 ```
 
-The command completed successfully during Stage 6.1.
-
 ---
 
 ## CloudFormation Advanced
-
-CloudFormation advanced stage:
-
-```text
-Stage 7.1 - CloudFormation Advanced Templates with Static Validation
-```
 
 CloudFormation advanced directory:
 
@@ -1095,7 +828,7 @@ CloudFormation advanced directory:
 cloudformation/advanced/
 ```
 
-Current template:
+Template:
 
 ```text
 cloudformation/advanced/security-baseline.yml
@@ -1147,36 +880,77 @@ Repository-wide validation command:
 find cloudformation -type f \( -name "*.yml" -o -name "*.yaml" \) -print0 | xargs -0 cfn-lint
 ```
 
-The advanced template passed local `cfn-lint` validation.
-
 No AWS deployment is performed.
 
 ---
 
-## Azure Cost Safety
+## IaC Tool Comparison
 
-Cost safety guide:
+The project uses three main automation and Infrastructure as Code approaches.
+
+| Tool | Main Purpose | Used For in This Project |
+|---|---|---|
+| Ansible | Configuration management and operational automation | Linux configuration, services, monitoring, backups |
+| Terraform | Cloud Infrastructure as Code | Azure networking, modules, environments, remote state |
+| CloudFormation | AWS-native Infrastructure as Code | AWS template structure and static validation |
+
+In simple terms:
 
 ```text
-terraform/docs/azure-cost-safety.md
+Ansible configures servers.
+Terraform creates and manages cloud infrastructure.
+CloudFormation defines AWS-native infrastructure templates.
 ```
 
-Mandatory Azure lab rules:
+More details are documented in:
 
 ```text
-use a dedicated lab resource group
-use small and cheap resources
-review terraform plan before apply
-do not leave resources running longer than needed
-destroy resources after validation
-check Azure Portal after destroy
-never commit Terraform state
-never commit real tfvars files
-never commit real backend config files
-never store Azure credentials in Git
+docs/iac-comparison.md
 ```
 
-Services avoided in early Terraform stages:
+---
+
+## What Was Actually Deployed
+
+Actually deployed locally:
+
+```text
+Hyper-V Ubuntu nodes
+Linux baseline configuration
+Nginx
+PostgreSQL
+Node Exporter
+Prometheus
+Grafana
+Grafana dashboards
+PostgreSQL backup and restore validation
+```
+
+Actually deployed in Azure during validation:
+
+```text
+Resource Group
+Virtual Network
+Subnet
+Network Security Group
+Subnet to NSG association
+Azure Storage Account for Terraform remote state
+Azure Blob Container for Terraform remote state
+Terraform state blob
+```
+
+CloudFormation deployment:
+
+```text
+No CloudFormation stacks were deployed.
+CloudFormation was used only for static validation.
+```
+
+---
+
+## What Was Intentionally Not Deployed
+
+Not deployed in Azure:
 
 ```text
 AKS
@@ -1193,111 +967,58 @@ VPN Gateway
 ExpressRoute
 ```
 
----
-
-## Terraform Files
-
-Terraform basics files:
-
-| File | Purpose |
-|---|---|
-| `terraform/azure/basics/versions.tf` | Terraform and provider version requirements |
-| `terraform/azure/basics/providers.tf` | AzureRM provider configuration |
-| `terraform/azure/basics/variables.tf` | Input variables and validation |
-| `terraform/azure/basics/locals.tf` | Computed names and common tags |
-| `terraform/azure/basics/main.tf` | Azure resources |
-| `terraform/azure/basics/outputs.tf` | Useful output values |
-| `terraform/azure/basics/terraform.tfvars.example` | Safe example variables |
-| `terraform/azure/basics/README.md` | Terraform basics documentation |
-
-Terraform module files:
-
-| File | Purpose |
-|---|---|
-| `terraform/azure/modules/network-foundation/versions.tf` | Terraform and AzureRM provider requirements for the module |
-| `terraform/azure/modules/network-foundation/variables.tf` | Module input variables |
-| `terraform/azure/modules/network-foundation/locals.tf` | Module naming and common tag logic |
-| `terraform/azure/modules/network-foundation/main.tf` | Azure resources created by the module |
-| `terraform/azure/modules/network-foundation/outputs.tf` | Module outputs |
-| `terraform/azure/modules/network-foundation/README.md` | Module documentation |
-
-Terraform dev environment files:
-
-| File | Purpose |
-|---|---|
-| `terraform/azure/environments/dev/versions.tf` | Terraform and provider requirements for dev |
-| `terraform/azure/environments/dev/providers.tf` | AzureRM provider configuration |
-| `terraform/azure/environments/dev/backend.tf` | Enables AzureRM remote backend |
-| `terraform/azure/environments/dev/backend.hcl.example` | Safe backend configuration example |
-| `terraform/azure/environments/dev/variables.tf` | Dev environment variables |
-| `terraform/azure/environments/dev/main.tf` | Calls the network foundation module |
-| `terraform/azure/environments/dev/outputs.tf` | Exposes module outputs |
-| `terraform/azure/environments/dev/terraform.tfvars.example` | Safe example values |
-| `terraform/azure/environments/dev/README.md` | Dev environment documentation |
-
-Terraform test environment files:
-
-| File | Purpose |
-|---|---|
-| `terraform/azure/environments/test/versions.tf` | Terraform and provider requirements for test |
-| `terraform/azure/environments/test/providers.tf` | AzureRM provider configuration |
-| `terraform/azure/environments/test/variables.tf` | Test environment variables |
-| `terraform/azure/environments/test/main.tf` | Calls the network foundation module |
-| `terraform/azure/environments/test/outputs.tf` | Exposes module outputs |
-| `terraform/azure/environments/test/terraform.tfvars.example` | Safe example values |
-| `terraform/azure/environments/test/README.md` | Test environment documentation |
-
-Terraform remote state bootstrap files:
-
-| File | Purpose |
-|---|---|
-| `terraform/azure/bootstrap/remote-state/versions.tf` | Terraform and provider requirements for backend bootstrap |
-| `terraform/azure/bootstrap/remote-state/providers.tf` | AzureRM provider configuration |
-| `terraform/azure/bootstrap/remote-state/variables.tf` | Remote state bootstrap variables |
-| `terraform/azure/bootstrap/remote-state/main.tf` | Creates Resource Group, Storage Account and Blob Container |
-| `terraform/azure/bootstrap/remote-state/outputs.tf` | Outputs backend configuration values |
-| `terraform/azure/bootstrap/remote-state/terraform.tfvars.example` | Safe example values |
-| `terraform/azure/bootstrap/remote-state/README.md` | Remote state bootstrap documentation |
-
-Local Terraform files not committed:
+Not deployed in AWS:
 
 ```text
-terraform.tfvars
-terraform.tfstate
-terraform.tfstate.backup
-.terraform/
-backend.hcl
+CloudFormation stacks
+S3 buckets from CloudFormation templates
+IAM policies from CloudFormation templates
+EC2 resources from CloudFormation templates
+VPC resources from CloudFormation templates
 ```
 
-Provider lock files can be committed:
+This is intentional.
 
-```text
-.terraform.lock.hcl
-```
+The project is designed to demonstrate practical skills while avoiding unnecessary cloud costs.
 
 ---
 
-## CloudFormation Files
+## Azure Cost Safety
 
-CloudFormation basics files:
+Cost safety guide:
 
-| File | Purpose |
-|---|---|
-| `cloudformation/basics/networking-basic.yml` | Basic CloudFormation networking template |
-| `cloudformation/basics/README.md` | CloudFormation basics documentation |
+```text
+terraform/docs/azure-cost-safety.md
+```
 
-CloudFormation advanced files:
+Mandatory Azure lab rule:
 
-| File | Purpose |
-|---|---|
-| `cloudformation/advanced/security-baseline.yml` | Advanced CloudFormation security baseline template |
-| `cloudformation/advanced/README.md` | CloudFormation advanced documentation |
+```text
+Create -> Validate -> Screenshot -> Destroy
+```
 
-CloudFormation validation workflow:
+Azure cost safety rules:
 
-| File | Purpose |
-|---|---|
-| `.github/workflows/cloudformation-validation.yml` | GitHub Actions workflow for cfn-lint validation |
+```text
+use a dedicated lab resource group
+use small and cheap resources
+review terraform plan before apply
+do not leave resources running longer than needed
+destroy resources after validation
+check Azure Portal after destroy
+never commit Terraform state
+never commit real tfvars files
+never commit real backend config files
+never store Azure credentials in Git
+```
+
+CloudFormation cost safety rule:
+
+```text
+Write -> Validate -> Document
+```
+
+CloudFormation templates are not deployed to AWS.
 
 ---
 
@@ -1369,9 +1090,9 @@ find cloudformation -type f \( -name "*.yml" -o -name "*.yaml" \) -print0 | xarg
 
 ---
 
-## Runtime Validation
+## Runtime Commands
 
-Ansible full workflow:
+Run full Ansible workflow:
 
 ```bash
 cd ansible
@@ -1381,31 +1102,31 @@ export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
 ansible-playbook playbooks/site.yml
 ```
 
-Ansible preflight:
+Run Ansible preflight:
 
 ```bash
 ansible-playbook playbooks/site.yml --tags preflight
 ```
 
-Ansible post-deployment validation:
+Run Ansible post-deployment validation:
 
 ```bash
 ansible-playbook playbooks/site.yml --tags post_validation
 ```
 
-PostgreSQL backup:
+Run PostgreSQL backup:
 
 ```bash
 ansible-playbook playbooks/site.yml --tags backup
 ```
 
-PostgreSQL restore validation:
+Run PostgreSQL restore validation:
 
 ```bash
 ansible-playbook playbooks/site.yml --tags restore_validation
 ```
 
-Terraform Azure module-based dev workflow:
+Run Terraform Azure module-based dev workflow:
 
 ```bash
 cd terraform/azure/environments/dev
@@ -1419,7 +1140,7 @@ terraform state list
 terraform destroy
 ```
 
-Terraform Azure module-based test workflow:
+Run Terraform Azure module-based test validation:
 
 ```bash
 cd terraform/azure/environments/test
@@ -1429,7 +1150,7 @@ terraform validate
 terraform plan
 ```
 
-Terraform remote state bootstrap workflow:
+Run Terraform remote state bootstrap workflow:
 
 ```bash
 cd terraform/azure/bootstrap/remote-state
@@ -1475,8 +1196,6 @@ site.yml syntax with dev inventory
 site.yml syntax with prod inventory
 ```
 
----
-
 ### Terraform Validation
 
 Workflow file:
@@ -1489,14 +1208,8 @@ The Terraform workflow checks:
 
 ```text
 terraform fmt -check -recursive terraform
-terraform init -backend=false for terraform/azure/basics
-terraform validate for terraform/azure/basics
-terraform init -backend=false for terraform/azure/environments/dev
-terraform validate for terraform/azure/environments/dev
-terraform init -backend=false for terraform/azure/environments/test
-terraform validate for terraform/azure/environments/test
-terraform init -backend=false for terraform/azure/bootstrap/remote-state
-terraform validate for terraform/azure/bootstrap/remote-state
+terraform init -backend=false
+terraform validate
 ```
 
 The workflow does not run:
@@ -1506,8 +1219,6 @@ terraform plan
 terraform apply
 terraform destroy
 ```
-
----
 
 ### Terraform Security Validation
 
@@ -1526,8 +1237,6 @@ Checkov Terraform security policies
 ```
 
 The workflow does not deploy Azure resources.
-
----
 
 ### CloudFormation Validation
 
@@ -1561,23 +1270,14 @@ Main documentation files:
 
 | File | Purpose |
 |---|---|
+| `docs/project-summary.md` | Final project summary |
+| `docs/iac-comparison.md` | Comparison of Ansible, Terraform and CloudFormation |
+| `docs/final-architecture-overview.md` | Final architecture overview |
 | `docs/architecture.md` | General lab architecture and design |
 | `docs/ansible-architecture.md` | Architecture explanation of the Ansible project |
 | `docs/runbooks/ansible-operations-guide.md` | Main operational guide for the Ansible workflow |
-| `docs/runbooks/stage-03-06-final-ansible-hardening.md` | Final Ansible hardening and cleanup |
-| `docs/runbooks/stage-04-01-terraform-azure-basics.md` | Terraform Azure basics stage runbook |
-| `docs/runbooks/stage-05-01-terraform-azure-modules.md` | Terraform Azure modules stage runbook |
-| `docs/runbooks/stage-05-02-terraform-environment-separation.md` | Terraform environment separation stage runbook |
-| `docs/runbooks/stage-05-03-terraform-remote-state.md` | Terraform remote state stage runbook |
-| `docs/runbooks/stage-06-01-cloudformation-basics.md` | CloudFormation basics stage runbook |
-| `docs/runbooks/stage-07-01-cloudformation-advanced.md` | CloudFormation advanced stage runbook |
 | `docs/security/terraform-security-validation.md` | Terraform security and policy validation documentation |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
-| `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
-| `terraform/azure/modules/network-foundation/README.md` | Network foundation module documentation |
-| `terraform/azure/environments/dev/README.md` | Terraform dev environment documentation |
-| `terraform/azure/environments/test/README.md` | Terraform test environment documentation |
-| `terraform/azure/bootstrap/remote-state/README.md` | Terraform remote state bootstrap documentation |
 | `cloudformation/basics/README.md` | CloudFormation basics documentation |
 | `cloudformation/advanced/README.md` | CloudFormation advanced documentation |
 
@@ -1587,21 +1287,21 @@ Stage runbooks are stored in:
 docs/runbooks/
 ```
 
-Troubleshooting documents are stored in:
+Important runbooks:
 
 ```text
-docs/troubleshooting/
-```
-
-Security documentation is stored in:
-
-```text
-docs/security/
+docs/runbooks/stage-03-06-final-ansible-hardening.md
+docs/runbooks/stage-04-01-terraform-azure-basics.md
+docs/runbooks/stage-05-01-terraform-azure-modules.md
+docs/runbooks/stage-05-02-terraform-environment-separation.md
+docs/runbooks/stage-05-03-terraform-remote-state.md
+docs/runbooks/stage-06-01-cloudformation-basics.md
+docs/runbooks/stage-07-01-cloudformation-advanced.md
 ```
 
 ---
 
-## Screenshots
+## Screenshots and Validation Evidence
 
 Validation screenshots are stored under:
 
@@ -1636,14 +1336,14 @@ docs/screenshots/stage-06-cloudformation-basics/
 docs/screenshots/stage-07-cloudformation-advanced/
 ```
 
-Stage 6.1 screenshots:
+Stage 6.1 screenshot:
 
 ```text
 docs/screenshots/stage-06-cloudformation-basics/
 └── 01-cfn-lint-local-validation.png
 ```
 
-Stage 7.1 screenshots:
+Stage 7.1 screenshot:
 
 ```text
 docs/screenshots/stage-07-cloudformation-advanced/
@@ -1736,8 +1436,11 @@ enterprise-automation-lab/
 │       └── create-lab-network.ps1
 │
 ├── docs/
-│   ├── ansible-architecture.md
 │   ├── architecture.md
+│   ├── ansible-architecture.md
+│   ├── project-summary.md
+│   ├── iac-comparison.md
+│   ├── final-architecture-overview.md
 │   ├── runbooks/
 │   ├── screenshots/
 │   ├── security/
@@ -1750,14 +1453,6 @@ enterprise-automation-lab/
         ├── terraform-security-validation.yml
         └── cloudformation-validation.yml
 ```
-
----
-
-## Project Roadmap
-
-| Stage | Goal |
-|---|---|
-| Stage 8 | Final IaC comparison and project summary |
 
 ---
 
@@ -1837,12 +1532,12 @@ infrastructure documentation and runbooks
 
 ---
 
-## Current Status Summary
+## Final Status Summary
 
 ```text
 The Ansible phase is complete.
 
-The local Hyper-V Linux lab is fully automated with Ansible.
+The local Hyper-V Linux lab is automated with Ansible.
 The project can deploy Linux baseline configuration, Nginx, PostgreSQL, Node Exporter, Prometheus and Grafana.
 The monitoring stack is validated end-to-end.
 Grafana dashboards are provisioned automatically.
@@ -1850,24 +1545,20 @@ Secrets are handled with Ansible Vault.
 The project supports dev and prod-style inventories.
 The project includes preflight and post-deployment validation.
 The project includes PostgreSQL backup and restore validation.
-The project includes final Ansible operations and architecture documentation.
 
-The Terraform Azure phase has an advanced baseline.
+The Terraform Azure phase is complete.
 
-Stage 4.1 created a safe Azure networking foundation with Resource Group, VNet, Subnet, NSG and NSG association.
-Stage 4.2 added Terraform validation through GitHub Actions.
-Stage 5.1 introduced a reusable network-foundation module and a dev environment that calls this module.
-Stage 5.2 added test environment separation using the same network-foundation module with separate CIDR values and resource names.
-Stage 5.3 added Terraform remote state with Azure Storage and validated the dev environment state blob in Azure Portal.
-Stage 5.4 added Terraform security and policy validation with TFLint, Checkov and a dedicated GitHub Actions workflow.
+The project includes Azure networking basics, reusable Terraform modules, environment separation, remote state with Azure Storage, and Terraform security validation with TFLint and Checkov.
 
-The CloudFormation phase has an advanced static validation baseline.
+The CloudFormation phase is complete.
 
-Stage 6.1 introduced CloudFormation basics with a networking template, Parameters, Mappings, Conditions, Resources, Outputs and cfn-lint validation.
-Stage 7.1 added an advanced CloudFormation security baseline template with Metadata, Rules, S3 security configuration, IAM policy document structure, DeletionPolicy, UpdateReplacePolicy and cfn-lint validation.
-
+The project includes CloudFormation basics and advanced templates with cfn-lint validation.
 No CloudFormation deployment is performed.
 No AWS resources are created.
+
+The final documentation phase is complete.
+
+The repository includes a final project summary, IaC comparison, final architecture overview, runbooks, screenshots, cost safety documentation and security validation documentation.
 ```
 
 ---
@@ -1882,7 +1573,7 @@ All Azure resources must follow this rule:
 Create -> Validate -> Screenshot -> Destroy
 ```
 
-CloudFormation is currently static-validation only.
+CloudFormation is static-validation only.
 
 CloudFormation templates are not deployed to AWS.
 
