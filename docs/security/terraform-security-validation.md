@@ -389,7 +389,46 @@ Checks the Terraform configuration that creates Azure Storage remote state resou
 
 ---
 
-## 10. Checkov Configuration
+## 10. TFLint prevent_destroy Finding
+
+TFLint reported that the remote state Storage Account and Blob Container should be protected from accidental deletion.
+
+Affected resources:
+
+```text
+azurerm_storage_account.tfstate
+azurerm_storage_container.tfstate
+```
+
+TFLint rule:
+
+```text
+azurerm_resources_missing_prevent_destroy
+```
+
+The fix was to add:
+
+```hcl
+lifecycle {
+  prevent_destroy = true
+}
+```
+
+This is appropriate for remote state resources because they store Terraform state data.
+
+Remote state backend resources should not be deleted accidentally.
+
+Important operational note:
+
+```text
+terraform destroy will be blocked for resources protected with prevent_destroy
+```
+
+If the backend must be intentionally removed later, the protection should be removed consciously in code first.
+
+---
+
+## 11. Checkov Configuration
 
 Checkov is installed inside GitHub Actions with:
 
@@ -431,7 +470,7 @@ Reports findings but does not fail the CI job.
 
 ---
 
-## 11. Why Checkov Uses Soft Fail
+## 12. Why Checkov Uses Soft Fail
 
 The project currently uses Checkov in advisory mode:
 
@@ -459,7 +498,7 @@ after the important findings are handled.
 
 ---
 
-## 12. Local Validation Commands
+## 13. Local Validation Commands
 
 Local installation of TFLint and Checkov is optional.
 
@@ -515,7 +554,7 @@ If Checkov is not installed locally, GitHub Actions will install it automaticall
 
 ---
 
-## 13. CI Safety
+## 14. CI Safety
 
 The Terraform security validation workflow is static.
 
@@ -544,7 +583,7 @@ az storage account create
 
 ---
 
-## 14. Relationship with Terraform Validation Workflow
+## 15. Relationship with Terraform Validation Workflow
 
 The project has two Terraform-related GitHub Actions workflows.
 
@@ -588,7 +627,7 @@ This workflow validates code quality, security posture and policy baseline.
 
 ---
 
-## 15. Current Workflow Design
+## 16. Current Workflow Design
 
 Current security workflow design:
 
@@ -613,7 +652,7 @@ Checkov may produce many baseline security findings during the first scan.
 
 ---
 
-## 16. Common Troubleshooting
+## 17. Common Troubleshooting
 
 ### Problem: TFLint fails because .tflint.hcl is missing
 
@@ -642,6 +681,39 @@ Correct examples:
 ```bash
 tflint --config ../../../.tflint.hcl
 tflint --config ../../../../.tflint.hcl
+```
+
+---
+
+### Problem: TFLint reports missing prevent_destroy
+
+Example warning:
+
+```text
+Resource is missing lifecycle { prevent_destroy = true }.
+This resource contains data that should be protected from accidental deletion.
+```
+
+Affected remote state resources:
+
+```text
+azurerm_storage_account.tfstate
+azurerm_storage_container.tfstate
+```
+
+Fix:
+
+```hcl
+lifecycle {
+  prevent_destroy = true
+}
+```
+
+Reason:
+
+```text
+Remote state backend resources store Terraform state data.
+They should be protected from accidental deletion.
 ```
 
 ---
@@ -692,7 +764,7 @@ check setup-tflint step logs
 
 ---
 
-## 17. Git Safety
+## 18. Git Safety
 
 This stage does not add secrets.
 
@@ -720,7 +792,7 @@ Vault password files
 
 ---
 
-## 18. Stage Result
+## 19. Stage Result
 
 At the end of this stage, the project includes:
 
@@ -732,6 +804,7 @@ Checkov Terraform scanning
 Terraform security validation GitHub Actions workflow
 static security validation documentation
 advisory security baseline
+remote state resources protected with prevent_destroy
 ```
 
 The project now validates Terraform code with:
@@ -745,7 +818,7 @@ Checkov
 
 ---
 
-## 19. Current Project Status
+## 20. Current Project Status
 
 Current completed stage:
 
@@ -764,11 +837,12 @@ Terraform linting
 Azure-specific Terraform linting
 Infrastructure-as-Code security scanning
 CI-based security baseline
+remote state deletion protection
 ```
 
 ---
 
-## 20. Next Stage
+## 21. Next Stage
 
 Next planned stage:
 

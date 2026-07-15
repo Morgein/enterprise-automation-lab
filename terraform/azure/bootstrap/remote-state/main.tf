@@ -35,10 +35,18 @@ resource "azurerm_storage_account" "tfstate" {
   allow_nested_items_to_be_public = false
 
   tags = local.common_tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_storage_container" "tfstate" {
   name                  = var.container_name
   storage_account_id    = azurerm_storage_account.tfstate.id
   container_access_type = "private"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
