@@ -36,10 +36,23 @@ jobs:
         uses: terraform-linters/setup-tflint@v4
 
       - name: Initialize TFLint plugins
-        run: tflint --init
+        run: tflint --init --config .tflint.hcl
 
-      - name: Run TFLint recursively
-        run: tflint --recursive --config .tflint.hcl
+      - name: Run TFLint basics
+        working-directory: terraform/azure/basics
+        run: tflint --config ../../../.tflint.hcl
+
+      - name: Run TFLint dev environment
+        working-directory: terraform/azure/environments/dev
+        run: tflint --config ../../../../.tflint.hcl
+
+      - name: Run TFLint test environment
+        working-directory: terraform/azure/environments/test
+        run: tflint --config ../../../../.tflint.hcl
+
+      - name: Run TFLint remote state bootstrap
+        working-directory: terraform/azure/bootstrap/remote-state
+        run: tflint --config ../../../../.tflint.hcl
 
       - name: Setup Python
         uses: actions/setup-python@v5
