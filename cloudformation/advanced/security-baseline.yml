@@ -1,0 +1,194 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Advanced CloudFormation security baseline template for the Enterprise
+  Automation Lab. This template is used for local/static validation only
+  and is not deployed to AWS in this stage.
+
+Metadata:
+  TemplateName: security-baseline
+  Project: enterprise-automation-lab
+  Stage: cloudformation-advanced
+  DeploymentPolicy: static-validation-only
+  Notes: >
+    This template demonstrates advanced CloudFormation concepts such as
+    Metadata, Rules, Conditions, IAM policy documents, S3 encryption,
+    S3 public access blocking, and structured outputs.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: Environment name used for resource names and tags.
+
+  EnableAuditBucket:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Controls whether the audit S3 bucket is created.
+
+  EnableReadOnlyPolicy:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Controls whether the read-only managed IAM policy is created.
+
+  AuditBucketNamePrefix:
+    Type: String
+    Default: ea-lab-audit
+    MinLength: 3
+    MaxLength: 30
+    AllowedPattern: "^[a-z0-9-]+$"
+    Description: >
+      Prefix for the audit S3 bucket name. Must contain only lowercase
+      letters, numbers and hyphens.
+
+  CostCenter:
+    Type: String
+    Default: lab
+    AllowedPattern: "^[a-zA-Z0-9-]+$"
+    Description: Cost center tag value.
+
+Rules:
+  AuditBucketRequiresValidPrefix:
+    RuleCondition: !Equals [!Ref EnableAuditBucket, "true"]
+    Assertions:
+      - Assert: !Not
+          - !Equals [!Ref AuditBucketNamePrefix, ""]
+        AssertDescription: AuditBucketNamePrefix must not be empty when audit bucket creation is enabled.
+
+Mappings:
+  EnvironmentMap:
+    dev:
+      EnvironmentType: Development
+      LogRetentionClass: STANDARD
+    test:
+      EnvironmentType: Testing
+      LogRetentionClass: STANDARD
+    prod:
+      EnvironmentType: Production
+      LogRetentionClass: STANDARD_IA
+
+Conditions:
+  ShouldCreateAuditBucket: !Equals [!Ref EnableAuditBucket, "true"]
+  ShouldCreateReadOnlyPolicy: !Equals [!Ref EnableReadOnlyPolicy, "true"]
+  IsProduction: !Equals [!Ref EnvironmentName, prod]
+
+Resources:
+  AuditBucket:
+    Type: AWS::S3::Bucket
+    Condition: ShouldCreateAuditBucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub ${AuditBucketNamePrefix}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: !If
+          - IsProduction
+          - Enabled
+          - Suspended
+      Tags:
+        - Key: Name
+          Value: !Sub ${AuditBucketNamePrefix}-${EnvironmentName}
+        - Key: Project
+          Value: enterprise-automation-lab
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: EnvironmentType
+          Value: !FindInMap
+            - EnvironmentMap
+            - !Ref EnvironmentName
+            - EnvironmentType
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Stage
+          Value: cloudformation-advanced
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  AuditBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: ShouldCreateAuditBucket
+    Properties:
+      Bucket: !Ref AuditBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub ${AuditBucket.Arn}
+              - !Sub ${AuditBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  ReadOnlyManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: ShouldCreateReadOnlyPolicy
+    Properties:
+      Description: !Sub Read-only policy for ${EnvironmentName} validation stage.
+      ManagedPolicyName: !Sub ea-lab-${EnvironmentName}-readonly-policy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowReadOnlyDiscovery
+            Effect: Allow
+            Action:
+              - ec2:Describe*
+              - s3:Get*
+              - s3:List*
+              - cloudwatch:Describe*
+              - cloudwatch:Get*
+              - cloudwatch:List*
+            Resource: "*"
+
+Outputs:
+  TemplateStage:
+    Description: CloudFormation stage represented by this template.
+    Value: cloudformation-advanced
+
+  EnvironmentType:
+    Description: Human-readable environment type from the mapping.
+    Value: !FindInMap
+      - EnvironmentMap
+      - !Ref EnvironmentName
+      - EnvironmentType
+
+  AuditBucketName:
+    Condition: ShouldCreateAuditBucket
+    Description: Name of the audit bucket.
+    Value: !Ref AuditBucket
+
+  AuditBucketArn:
+    Condition: ShouldCreateAuditBucket
+    Description: ARN of the audit bucket.
+    Value: !GetAtt AuditBucket.Arn
+
+  ReadOnlyManagedPolicyName:
+    Condition: ShouldCreateReadOnlyPolicy
+    Description: Name of the read-only managed IAM policy.
+    Value: !Ref ReadOnlyManagedPolicy

@@ -23,7 +23,8 @@ local virtualization
     -> Terraform environment separation
     -> Terraform remote state with Azure Storage
     -> Terraform security and policy validation
-    -> CloudFormation static validation
+    -> CloudFormation basics static validation
+    -> CloudFormation advanced static validation
     -> CI-based validation
 ```
 
@@ -43,6 +44,7 @@ Terraform remote state
 Terraform security validation
 AWS CloudFormation template structure
 CloudFormation static validation
+CloudFormation security baseline templates
 CI validation
 technical documentation
 ```
@@ -54,7 +56,7 @@ technical documentation
 Current stage:
 
 ```text
-Stage 6.1 - CloudFormation Basics with Local Static Validation
+Stage 7.1 - CloudFormation Advanced Templates with Static Validation
 ```
 
 Ansible phase:
@@ -72,7 +74,7 @@ Completed advanced baseline
 CloudFormation phase:
 
 ```text
-In progress
+Completed advanced static validation baseline
 ```
 
 ---
@@ -115,6 +117,7 @@ In progress
 | Stage 5.3 | Terraform remote state with Azure Storage | Completed |
 | Stage 5.4 | Terraform security and policy validation with TFLint and Checkov | Completed |
 | Stage 6.1 | CloudFormation basics with local static validation | Completed |
+| Stage 7.1 | CloudFormation advanced templates with static validation | Completed |
 
 ---
 
@@ -164,13 +167,26 @@ Windows 11 Host
 │
 └── CloudFormation Static Validation
     └── AWS-native IaC templates
-        ├── VPC template structure
-        ├── Parameters
-        ├── Mappings
-        ├── Conditions
-        ├── Resources
-        ├── Outputs
-        └── cfn-lint validation
+        ├── basics/
+        │   └── networking-basic.yml
+        │       ├── VPC
+        │       ├── Subnets
+        │       ├── Security Group
+        │       ├── Parameters
+        │       ├── Mappings
+        │       ├── Conditions
+        │       └── Outputs
+        │
+        └── advanced/
+            └── security-baseline.yml
+                ├── Metadata
+                ├── Rules
+                ├── S3 security baseline
+                ├── S3 bucket policy
+                ├── IAM managed policy
+                ├── DeletionPolicy
+                ├── UpdateReplacePolicy
+                └── advanced Outputs
 ```
 
 ---
@@ -989,7 +1005,31 @@ No AWS credentials are required.
 
 No AWS costs are generated.
 
-Current CloudFormation stage:
+CloudFormation validation tool:
+
+```text
+cfn-lint
+```
+
+CloudFormation validation workflow:
+
+```text
+.github/workflows/cloudformation-validation.yml
+```
+
+The workflow installs `cfn-lint` and validates all CloudFormation YAML templates inside:
+
+```text
+cloudformation/
+```
+
+The workflow does not deploy stacks.
+
+---
+
+## CloudFormation Basics
+
+CloudFormation basics stage:
 
 ```text
 Stage 6.1 - CloudFormation Basics with Local Static Validation
@@ -1031,12 +1071,6 @@ Intrinsic functions
 Tags
 ```
 
-Validation tool:
-
-```text
-cfn-lint
-```
-
 Validation command:
 
 ```bash
@@ -1045,15 +1079,77 @@ cfn-lint cloudformation/basics/networking-basic.yml
 
 The command completed successfully during Stage 6.1.
 
-CloudFormation validation workflow:
+---
+
+## CloudFormation Advanced
+
+CloudFormation advanced stage:
 
 ```text
-.github/workflows/cloudformation-validation.yml
+Stage 7.1 - CloudFormation Advanced Templates with Static Validation
 ```
 
-The workflow installs `cfn-lint` and validates CloudFormation YAML templates.
+CloudFormation advanced directory:
 
-The workflow does not deploy stacks.
+```text
+cloudformation/advanced/
+```
+
+Current template:
+
+```text
+cloudformation/advanced/security-baseline.yml
+```
+
+The template defines:
+
+```text
+optional S3 audit bucket
+S3 public access block
+S3 server-side encryption
+S3 bucket ownership controls
+S3 bucket policy denying insecure transport
+optional read-only IAM managed policy
+environment-specific mapping
+conditional resource creation
+conditional property values
+structured outputs
+```
+
+The template demonstrates:
+
+```text
+Metadata
+Rules
+advanced Parameters
+Mappings
+Conditions
+DeletionPolicy
+UpdateReplacePolicy
+S3 BucketEncryption
+S3 PublicAccessBlockConfiguration
+S3 BucketPolicy
+IAM ManagedPolicy
+AWS pseudo parameters
+advanced intrinsic functions
+Outputs
+```
+
+Validation command:
+
+```bash
+cfn-lint cloudformation/advanced/security-baseline.yml
+```
+
+Repository-wide validation command:
+
+```bash
+find cloudformation -type f \( -name "*.yml" -o -name "*.yaml" \) -print0 | xargs -0 cfn-lint
+```
+
+The advanced template passed local `cfn-lint` validation.
+
+No AWS deployment is performed.
 
 ---
 
@@ -1190,6 +1286,13 @@ CloudFormation basics files:
 | `cloudformation/basics/networking-basic.yml` | Basic CloudFormation networking template |
 | `cloudformation/basics/README.md` | CloudFormation basics documentation |
 
+CloudFormation advanced files:
+
+| File | Purpose |
+|---|---|
+| `cloudformation/advanced/security-baseline.yml` | Advanced CloudFormation security baseline template |
+| `cloudformation/advanced/README.md` | CloudFormation advanced documentation |
+
 CloudFormation validation workflow:
 
 | File | Purpose |
@@ -1255,6 +1358,7 @@ Run CloudFormation validation:
 
 ```bash
 cfn-lint cloudformation/basics/networking-basic.yml
+cfn-lint cloudformation/advanced/security-baseline.yml
 ```
 
 Repository-wide CloudFormation validation:
@@ -1341,6 +1445,7 @@ CloudFormation workflow:
 
 ```bash
 cfn-lint cloudformation/basics/networking-basic.yml
+cfn-lint cloudformation/advanced/security-baseline.yml
 ```
 
 No CloudFormation deployment is performed.
@@ -1439,6 +1544,13 @@ CloudFormation YAML templates
 cfn-lint validation
 ```
 
+Current templates checked:
+
+```text
+cloudformation/basics/networking-basic.yml
+cloudformation/advanced/security-baseline.yml
+```
+
 The workflow does not deploy AWS resources.
 
 ---
@@ -1458,6 +1570,7 @@ Main documentation files:
 | `docs/runbooks/stage-05-02-terraform-environment-separation.md` | Terraform environment separation stage runbook |
 | `docs/runbooks/stage-05-03-terraform-remote-state.md` | Terraform remote state stage runbook |
 | `docs/runbooks/stage-06-01-cloudformation-basics.md` | CloudFormation basics stage runbook |
+| `docs/runbooks/stage-07-01-cloudformation-advanced.md` | CloudFormation advanced stage runbook |
 | `docs/security/terraform-security-validation.md` | Terraform security and policy validation documentation |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
 | `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
@@ -1466,6 +1579,7 @@ Main documentation files:
 | `terraform/azure/environments/test/README.md` | Terraform test environment documentation |
 | `terraform/azure/bootstrap/remote-state/README.md` | Terraform remote state bootstrap documentation |
 | `cloudformation/basics/README.md` | CloudFormation basics documentation |
+| `cloudformation/advanced/README.md` | CloudFormation advanced documentation |
 
 Stage runbooks are stored in:
 
@@ -1519,6 +1633,7 @@ docs/screenshots/stage-05-terraform-azure-modules/
 docs/screenshots/stage-05-terraform-environment-separation/
 docs/screenshots/stage-05-terraform-remote-state/
 docs/screenshots/stage-06-cloudformation-basics/
+docs/screenshots/stage-07-cloudformation-advanced/
 ```
 
 Stage 6.1 screenshots:
@@ -1528,7 +1643,14 @@ docs/screenshots/stage-06-cloudformation-basics/
 └── 01-cfn-lint-local-validation.png
 ```
 
-Screenshots are used as runtime evidence that the lab was configured and validated successfully.
+Stage 7.1 screenshots:
+
+```text
+docs/screenshots/stage-07-cloudformation-advanced/
+└── 01-cfn-lint-advanced-validation.png
+```
+
+Screenshots are used as validation evidence that the lab was configured and validated successfully.
 
 ---
 
@@ -1602,9 +1724,12 @@ enterprise-automation-lab/
 │       └── azure-cost-safety.md
 │
 ├── cloudformation/
-│   └── basics/
+│   ├── basics/
+│   │   ├── README.md
+│   │   └── networking-basic.yml
+│   └── advanced/
 │       ├── README.md
-│       └── networking-basic.yml
+│       └── security-baseline.yml
 │
 ├── scripts/
 │   └── hyperv/
@@ -1632,7 +1757,6 @@ enterprise-automation-lab/
 
 | Stage | Goal |
 |---|---|
-| Stage 7.1 | CloudFormation advanced templates with static validation |
 | Stage 8 | Final IaC comparison and project summary |
 
 ---
@@ -1693,6 +1817,12 @@ CloudFormation conditions
 CloudFormation resources
 CloudFormation outputs
 CloudFormation intrinsic functions
+CloudFormation Metadata
+CloudFormation Rules
+CloudFormation DeletionPolicy
+CloudFormation UpdateReplacePolicy
+CloudFormation S3 security configuration
+CloudFormation IAM policy document structure
 CloudFormation validation with cfn-lint
 Azure Resource Group management
 Azure Virtual Network basics
@@ -1731,11 +1861,44 @@ Stage 5.2 added test environment separation using the same network-foundation mo
 Stage 5.3 added Terraform remote state with Azure Storage and validated the dev environment state blob in Azure Portal.
 Stage 5.4 added Terraform security and policy validation with TFLint, Checkov and a dedicated GitHub Actions workflow.
 
-The CloudFormation phase has started.
+The CloudFormation phase has an advanced static validation baseline.
 
 Stage 6.1 introduced CloudFormation basics with a networking template, Parameters, Mappings, Conditions, Resources, Outputs and cfn-lint validation.
+Stage 7.1 added an advanced CloudFormation security baseline template with Metadata, Rules, S3 security configuration, IAM policy document structure, DeletionPolicy, UpdateReplacePolicy and cfn-lint validation.
+
 No CloudFormation deployment is performed.
 No AWS resources are created.
 ```
 
 ---
+
+## Safety Notice
+
+This project uses real Azure resources during the Terraform phase.
+
+All Azure resources must follow this rule:
+
+```text
+Create -> Validate -> Screenshot -> Destroy
+```
+
+CloudFormation is currently static-validation only.
+
+CloudFormation templates are not deployed to AWS.
+
+Never commit:
+
+```text
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+backend.hcl
+Azure credentials
+AWS credentials
+.aws/
+Vault files
+Vault password files
+```
+
+Always verify `git status` before committing.
