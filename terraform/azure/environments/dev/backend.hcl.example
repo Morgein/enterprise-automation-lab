@@ -1,0 +1,5 @@
+resource_group_name  = "rg-ea-lab-tfstate"
+storage_account_name = "ealabtfstatexxxxxx"
+container_name       = "tfstate"
+key                  = "dev.terraform.tfstate"
+subscription_id      = "00000000-0000-0000-0000-000000000000"

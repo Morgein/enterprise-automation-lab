@@ -61,3 +61,11 @@ jobs:
       - name: Terraform validate test environment
         working-directory: terraform/azure/environments/test
         run: terraform validate
+
+      - name: Terraform init remote state bootstrap
+        working-directory: terraform/azure/bootstrap/remote-state
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate remote state bootstrap
+        working-directory: terraform/azure/bootstrap/remote-state
+        run: terraform validate

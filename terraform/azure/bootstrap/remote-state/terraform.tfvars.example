@@ -1,0 +1,11 @@
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+project_name = "enterprise-automation-lab"
+
+location = "swedencentral"
+
+resource_group_name = "rg-ea-lab-tfstate"
+
+storage_account_prefix = "ealabtfstate"
+
+container_name = "tfstate"

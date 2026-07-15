@@ -19,6 +19,7 @@ local virtualization
     -> Terraform Azure Infrastructure as Code
     -> reusable Terraform module structure
     -> Terraform environment separation
+    -> Terraform remote state with Azure Storage
     -> CI-based static validation
 ```
 
@@ -34,6 +35,7 @@ Infrastructure as Code
 Azure networking
 Terraform modules
 Terraform environment separation
+Terraform remote state
 CI validation
 technical documentation
 ```
@@ -45,7 +47,7 @@ technical documentation
 Current stage:
 
 ```text
-Stage 5.2 - Terraform Environment Separation
+Stage 5.3 - Terraform Remote State with Azure Storage
 ```
 
 Ansible phase:
@@ -103,6 +105,7 @@ Planned
 | Stage 4.2 | Terraform validation workflow in GitHub Actions | Completed |
 | Stage 5.1 | Terraform Azure modules: network foundation module and dev environment | Completed |
 | Stage 5.2 | Terraform environment separation with dev and test environments | Completed |
+| Stage 5.3 | Terraform remote state with Azure Storage | Completed |
 
 ---
 
@@ -138,10 +141,16 @@ Windows 11 Host
         │   ├── Network Security Group
         │   └── Subnet to NSG association
         │
-        └── Module-based configuration
-            ├── network-foundation module
-            ├── dev environment
-            └── test environment
+        ├── Module-based configuration
+        │   ├── network-foundation module
+        │   ├── dev environment
+        │   └── test environment
+        │
+        └── Remote state backend
+            ├── Resource Group
+            ├── Storage Account
+            ├── Blob Container
+            └── dev.terraform.tfstate blob
 ```
 
 ---
@@ -570,6 +579,7 @@ plan/apply/destroy workflow
 Azure resource modeling
 module structure
 environment separation
+remote state
 cost-safe cloud validation
 ```
 
@@ -722,13 +732,13 @@ This confirms that Azure resources are created through the reusable Terraform mo
 
 ## Terraform Environment Separation
 
-Current environment separation stage:
+Terraform environment separation stage:
 
 ```text
 Stage 5.2 - Terraform Environment Separation
 ```
 
-The project now contains two module-based Azure environments:
+The project contains two module-based Azure environments:
 
 ```text
 terraform/azure/environments/dev/
@@ -769,6 +779,120 @@ A test plan is enough to prove that the module generates different test resource
 
 ---
 
+## Terraform Remote State
+
+Current remote state stage:
+
+```text
+Stage 5.3 - Terraform Remote State with Azure Storage
+```
+
+This stage introduces Terraform remote state using Azure Storage.
+
+Before this stage, Terraform state was stored locally:
+
+```text
+terraform.tfstate
+```
+
+After this stage, the `dev` environment can store its Terraform state in Azure Storage:
+
+```text
+dev.terraform.tfstate
+```
+
+Remote state bootstrap directory:
+
+```text
+terraform/azure/bootstrap/remote-state/
+```
+
+The bootstrap configuration creates:
+
+```text
+Resource Group
+Storage Account
+Blob Container
+```
+
+Remote state backend resources:
+
+| Resource | Purpose |
+|---|---|
+| Resource Group | Holds Terraform remote state resources |
+| Storage Account | Stores Terraform state blobs |
+| Blob Container | Stores `.tfstate` files |
+
+Remote state flow:
+
+```text
+terraform/azure/bootstrap/remote-state/
+    |
+    | creates
+    v
+Azure Storage Account + Blob Container
+    |
+    | used by
+    v
+terraform/azure/environments/dev/
+    |
+    | stores state as
+    v
+dev.terraform.tfstate
+```
+
+The `dev` environment contains:
+
+```text
+backend.tf
+backend.hcl.example
+```
+
+`backend.tf` enables the AzureRM backend:
+
+```hcl
+terraform {
+  backend "azurerm" {}
+}
+```
+
+`backend.hcl.example` provides a safe template for local backend configuration.
+
+The real local backend configuration file is:
+
+```text
+backend.hcl
+```
+
+This file is not committed to Git.
+
+Reason:
+
+```text
+backend.hcl can contain real backend values such as subscription ID and Storage Account name
+```
+
+Stage 5.3 validated:
+
+```text
+remote state bootstrap plan
+remote state bootstrap apply
+Azure Storage Account creation
+Blob Container creation
+dev environment backend initialization
+dev environment plan with remote backend
+dev environment apply with remote state
+Terraform state blob visible in Azure Portal
+```
+
+Expected remote state blob:
+
+```text
+dev.terraform.tfstate
+```
+
+---
+
 ## Azure Cost Safety
 
 Cost safety guide:
@@ -788,6 +912,7 @@ destroy resources after validation
 check Azure Portal after destroy
 never commit Terraform state
 never commit real tfvars files
+never commit real backend config files
 never store Azure credentials in Git
 ```
 
@@ -842,6 +967,8 @@ Terraform dev environment files:
 |---|---|
 | `terraform/azure/environments/dev/versions.tf` | Terraform and provider requirements for dev |
 | `terraform/azure/environments/dev/providers.tf` | AzureRM provider configuration |
+| `terraform/azure/environments/dev/backend.tf` | Enables AzureRM remote backend |
+| `terraform/azure/environments/dev/backend.hcl.example` | Safe backend configuration example |
 | `terraform/azure/environments/dev/variables.tf` | Dev environment variables |
 | `terraform/azure/environments/dev/main.tf` | Calls the network foundation module |
 | `terraform/azure/environments/dev/outputs.tf` | Exposes module outputs |
@@ -860,6 +987,18 @@ Terraform test environment files:
 | `terraform/azure/environments/test/terraform.tfvars.example` | Safe example values |
 | `terraform/azure/environments/test/README.md` | Test environment documentation |
 
+Terraform remote state bootstrap files:
+
+| File | Purpose |
+|---|---|
+| `terraform/azure/bootstrap/remote-state/versions.tf` | Terraform and provider requirements for backend bootstrap |
+| `terraform/azure/bootstrap/remote-state/providers.tf` | AzureRM provider configuration |
+| `terraform/azure/bootstrap/remote-state/variables.tf` | Remote state bootstrap variables |
+| `terraform/azure/bootstrap/remote-state/main.tf` | Creates Resource Group, Storage Account and Blob Container |
+| `terraform/azure/bootstrap/remote-state/outputs.tf` | Outputs backend configuration values |
+| `terraform/azure/bootstrap/remote-state/terraform.tfvars.example` | Safe example values |
+| `terraform/azure/bootstrap/remote-state/README.md` | Remote state bootstrap documentation |
+
 Local files not committed:
 
 ```text
@@ -868,6 +1007,7 @@ terraform/azure/basics/terraform.tfstate
 terraform/azure/basics/terraform.tfstate.backup
 terraform/azure/basics/.terraform/
 
+terraform/azure/environments/dev/backend.hcl
 terraform/azure/environments/dev/terraform.tfvars
 terraform/azure/environments/dev/terraform.tfstate
 terraform/azure/environments/dev/terraform.tfstate.backup
@@ -877,6 +1017,11 @@ terraform/azure/environments/test/terraform.tfvars
 terraform/azure/environments/test/terraform.tfstate
 terraform/azure/environments/test/terraform.tfstate.backup
 terraform/azure/environments/test/.terraform/
+
+terraform/azure/bootstrap/remote-state/terraform.tfvars
+terraform/azure/bootstrap/remote-state/terraform.tfstate
+terraform/azure/bootstrap/remote-state/terraform.tfstate.backup
+terraform/azure/bootstrap/remote-state/.terraform/
 ```
 
 Provider lock files can be committed:
@@ -885,6 +1030,7 @@ Provider lock files can be committed:
 terraform/azure/basics/.terraform.lock.hcl
 terraform/azure/environments/dev/.terraform.lock.hcl
 terraform/azure/environments/test/.terraform.lock.hcl
+terraform/azure/bootstrap/remote-state/.terraform.lock.hcl
 ```
 
 Provider lock files keep provider versions reproducible.
@@ -923,6 +1069,16 @@ terraform fmt -check -recursive .
 terraform validate
 ```
 
+Terraform remote state bootstrap validation:
+
+```bash
+cd terraform/azure/bootstrap/remote-state
+
+terraform init -backend=false -input=false
+terraform fmt -check -recursive .
+terraform validate
+```
+
 Terraform plan for dev environment:
 
 ```bash
@@ -939,60 +1095,53 @@ cd terraform/azure/environments/test
 terraform plan
 ```
 
-Expected Stage 5.2 test plan:
-
-```text
-Plan: 5 to add, 0 to change, 0 to destroy.
-```
-
-Expected test resource names:
-
-```text
-rg-ea-lab-test
-vnet-ea-lab-test
-snet-ea-lab-test-main
-nsg-ea-lab-test-main
-```
-
-Expected test CIDR values:
-
-```text
-10.50.0.0/16
-10.50.1.0/24
-```
-
-Expected module-based resources:
-
-```text
-module.network_foundation.azurerm_resource_group.main
-module.network_foundation.azurerm_virtual_network.main
-module.network_foundation.azurerm_subnet.main
-module.network_foundation.azurerm_network_security_group.main
-module.network_foundation.azurerm_subnet_network_security_group_association.main
-```
-
-Apply resources:
+Terraform plan for remote state bootstrap:
 
 ```bash
-terraform apply
+cd terraform/azure/bootstrap/remote-state
+
+terraform plan
 ```
 
-Show outputs:
+Expected Stage 5.3 bootstrap plan:
 
-```bash
-terraform output
+```text
+Plan: 4 to add, 0 to change, 0 to destroy.
 ```
 
-Show state:
+The plan contains:
 
-```bash
-terraform state list
+```text
+random_string.storage_suffix
+azurerm_resource_group.tfstate
+azurerm_storage_account.tfstate
+azurerm_storage_container.tfstate
 ```
 
-Destroy resources:
+Azure resources created by bootstrap:
+
+```text
+Resource Group
+Storage Account
+Blob Container
+```
+
+`random_string` is a Terraform resource, not an Azure resource.
+
+Remote backend initialization for dev:
 
 ```bash
-terraform destroy
+cd terraform/azure/environments/dev
+
+terraform init -backend-config=backend.hcl -migrate-state
+terraform validate
+terraform plan
+```
+
+Expected remote backend state blob:
+
+```text
+dev.terraform.tfstate
 ```
 
 ---
@@ -1046,12 +1195,15 @@ No AWS paid deployment is planned at the current stage.
 | Terraform | Infrastructure as Code |
 | Terraform Modules | Reusable Infrastructure as Code structure |
 | Terraform Environments | Environment-specific Infrastructure as Code structure |
+| Terraform Remote State | Shared state storage model |
 | AzureRM Provider | Terraform provider for Azure |
 | Azure Student Subscription | Cloud practice environment |
 | Azure Resource Group | Azure resource container |
 | Azure Virtual Network | Azure networking |
 | Azure Subnet | Azure network segmentation |
 | Azure Network Security Group | Azure network filtering |
+| Azure Storage Account | Remote state storage backend |
+| Azure Blob Container | Terraform state blob storage |
 | yamllint | YAML validation |
 | ansible-lint | Ansible best-practice validation |
 | GitHub Actions | Static CI validation |
@@ -1097,6 +1249,8 @@ enterprise-automation-lab/
 ├── terraform/
 │   ├── azure/
 │   │   ├── basics/
+│   │   ├── bootstrap/
+│   │   │   └── remote-state/
 │   │   ├── environments/
 │   │   │   ├── dev/
 │   │   │   └── test/
@@ -1184,6 +1338,15 @@ terraform init -backend=false -input=false
 terraform validate
 ```
 
+Run Terraform remote state bootstrap validation:
+
+```bash
+cd terraform/azure/bootstrap/remote-state
+
+terraform init -backend=false -input=false
+terraform validate
+```
+
 ---
 
 ## Runtime Validation
@@ -1260,7 +1423,32 @@ terraform validate
 terraform plan
 ```
 
-For Stage 5.2, the test environment uses plan-only validation.
+Terraform remote state bootstrap workflow:
+
+```bash
+cd terraform/azure/bootstrap/remote-state
+
+terraform init
+terraform validate
+terraform plan
+terraform apply
+terraform output
+terraform destroy
+```
+
+Terraform dev remote backend workflow:
+
+```bash
+cd terraform/azure/environments/dev
+
+terraform init -backend-config=backend.hcl -migrate-state
+terraform validate
+terraform plan
+terraform apply
+terraform state list
+terraform output
+terraform destroy
+```
 
 ---
 
@@ -1322,6 +1510,8 @@ terraform init -backend=false for terraform/azure/environments/dev
 terraform validate for terraform/azure/environments/dev
 terraform init -backend=false for terraform/azure/environments/test
 terraform validate for terraform/azure/environments/test
+terraform init -backend=false for terraform/azure/bootstrap/remote-state
+terraform validate for terraform/azure/bootstrap/remote-state
 ```
 
 The workflow does not run:
@@ -1349,11 +1539,13 @@ Main documentation files:
 | `docs/runbooks/stage-04-01-terraform-azure-basics.md` | Terraform Azure basics stage runbook |
 | `docs/runbooks/stage-05-01-terraform-azure-modules.md` | Terraform Azure modules stage runbook |
 | `docs/runbooks/stage-05-02-terraform-environment-separation.md` | Terraform environment separation stage runbook |
+| `docs/runbooks/stage-05-03-terraform-remote-state.md` | Terraform remote state stage runbook |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
 | `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
 | `terraform/azure/modules/network-foundation/README.md` | Network foundation module documentation |
 | `terraform/azure/environments/dev/README.md` | Terraform dev environment documentation |
 | `terraform/azure/environments/test/README.md` | Terraform test environment documentation |
+| `terraform/azure/bootstrap/remote-state/README.md` | Terraform remote state bootstrap documentation |
 
 Stage runbooks are stored in:
 
@@ -1399,6 +1591,7 @@ docs/screenshots/stage-04-azure-terraform-basics/
 docs/screenshots/stage-04-terraform-validation/
 docs/screenshots/stage-05-terraform-azure-modules/
 docs/screenshots/stage-05-terraform-environment-separation/
+docs/screenshots/stage-05-terraform-remote-state/
 ```
 
 Stage 5.1 screenshots:
@@ -1419,6 +1612,18 @@ docs/screenshots/stage-05-terraform-environment-separation/
 └── 01-terraform-test-environment-plan.png
 ```
 
+Stage 5.3 screenshots:
+
+```text
+docs/screenshots/stage-05-terraform-remote-state/
+├── 01-remote-state-bootstrap-plan.png
+├── 02-remote-state-bootstrap-apply-output.png
+├── 03-dev-remote-backend-init-validate.png
+├── 04-dev-remote-backend-plan.png
+├── 05-dev-remote-state-apply-state-output.png
+└── 06-azure-portal-remote-state-blob.png
+```
+
 Screenshots are used as runtime evidence that the lab was configured and validated successfully.
 
 ---
@@ -1427,7 +1632,6 @@ Screenshots are used as runtime evidence that the lab was configured and validat
 
 | Stage | Goal |
 |---|---|
-| Stage 5.3 | Terraform remote state with Azure Storage |
 | Stage 5.4 | Terraform security and policy validation |
 | Stage 6.1 | CloudFormation basics with local static validation |
 | Stage 7.1 | CloudFormation advanced templates with static validation |
@@ -1480,11 +1684,15 @@ Terraform child modules
 Terraform module inputs
 Terraform module outputs
 Terraform environment separation
+Terraform remote state with Azure Storage
+Terraform AzureRM backend configuration
 Terraform CI validation
 Azure Resource Group management
 Azure Virtual Network basics
 Azure Subnet basics
 Azure Network Security Group basics
+Azure Storage Account basics
+Azure Blob Container basics
 Azure cost safety workflow
 infrastructure documentation and runbooks
 ```
@@ -1514,10 +1722,12 @@ Stage 4.1 created a safe Azure networking foundation with Resource Group, VNet, 
 Stage 4.2 added Terraform validation through GitHub Actions.
 Stage 5.1 introduced a reusable network-foundation module and a dev environment that calls this module.
 Stage 5.2 added test environment separation using the same network-foundation module with separate CIDR values and resource names.
-The Terraform workflow demonstrates init, validate, plan, apply, output, state list and destroy.
+Stage 5.3 added Terraform remote state with Azure Storage and validated the dev environment state blob in Azure Portal.
+The Terraform workflow demonstrates init, validate, plan, apply, output, state list, destroy and remote backend initialization.
 Azure resources are destroyed after validation to protect student credits.
 
 CloudFormation is planned as a future local/static-validation learning phase.
 ```
 
 ---
+

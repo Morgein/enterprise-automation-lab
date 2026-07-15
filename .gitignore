@@ -58,3 +58,7 @@ terraform/**/generated/
 # Terraform local variable files
 *.tfvars
 !*.tfvars.example
+
+# Terraform backend local configuration files
+**/backend.hcl
+!**/backend.hcl.example
