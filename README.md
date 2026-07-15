@@ -3,10 +3,11 @@
 [![Ansible Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/ansible-validation.yml)
 [![Terraform Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-validation.yml)
 [![Terraform Security Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-security-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/terraform-security-validation.yml)
+[![CloudFormation Validation](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/cloudformation-validation.yml/badge.svg?branch=main&event=push)](https://github.com/Morgein/enterprise-automation-lab/actions/workflows/cloudformation-validation.yml)
 
 ## Project Overview
 
-**Enterprise Automation Lab** is a practical infrastructure automation project built around a local Hyper-V Linux lab, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, and Terraform-based Azure Infrastructure as Code practice.
+**Enterprise Automation Lab** is a practical infrastructure automation project built around a local Hyper-V Linux lab, Ansible configuration management, monitoring automation, PostgreSQL backup and restore validation, Terraform-based Azure Infrastructure as Code practice, and AWS CloudFormation static validation.
 
 The project demonstrates a complete infrastructure automation workflow:
 
@@ -21,7 +22,9 @@ local virtualization
     -> reusable Terraform module structure
     -> Terraform environment separation
     -> Terraform remote state with Azure Storage
-    -> CI-based static validation
+    -> Terraform security and policy validation
+    -> CloudFormation static validation
+    -> CI-based validation
 ```
 
 The main technical focus of the project is:
@@ -37,6 +40,9 @@ Azure networking
 Terraform modules
 Terraform environment separation
 Terraform remote state
+Terraform security validation
+AWS CloudFormation template structure
+CloudFormation static validation
 CI validation
 technical documentation
 ```
@@ -48,7 +54,7 @@ technical documentation
 Current stage:
 
 ```text
-Stage 5.4 - Terraform Security and Policy Validation
+Stage 6.1 - CloudFormation Basics with Local Static Validation
 ```
 
 Ansible phase:
@@ -60,13 +66,13 @@ Completed
 Terraform phase:
 
 ```text
-In progress
+Completed advanced baseline
 ```
 
 CloudFormation phase:
 
 ```text
-Planned
+In progress
 ```
 
 ---
@@ -108,6 +114,7 @@ Planned
 | Stage 5.2 | Terraform environment separation with dev and test environments | Completed |
 | Stage 5.3 | Terraform remote state with Azure Storage | Completed |
 | Stage 5.4 | Terraform security and policy validation with TFLint and Checkov | Completed |
+| Stage 6.1 | CloudFormation basics with local static validation | Completed |
 
 ---
 
@@ -124,6 +131,7 @@ Windows 11 Host
 │       ├── Ansible
 │       ├── Terraform
 │       ├── Azure CLI
+│       ├── cfn-lint
 │       ├── ansible-lint
 │       └── yamllint
 │
@@ -134,25 +142,35 @@ Windows 11 Host
 │       ├── db-01       192.168.100.21
 │       └── monitor-01  192.168.100.31
 │
-└── Azure Student Subscription
-    └── Terraform Azure Infrastructure as Code
-        ├── Basics configuration
-        │   ├── Resource Group
-        │   ├── Virtual Network
-        │   ├── Subnet
-        │   ├── Network Security Group
-        │   └── Subnet to NSG association
-        │
-        ├── Module-based configuration
-        │   ├── network-foundation module
-        │   ├── dev environment
-        │   └── test environment
-        │
-        └── Remote state backend
-            ├── Resource Group
-            ├── Storage Account
-            ├── Blob Container
-            └── dev.terraform.tfstate blob
+├── Azure Student Subscription
+│   └── Terraform Azure Infrastructure as Code
+│       ├── Basics configuration
+│       │   ├── Resource Group
+│       │   ├── Virtual Network
+│       │   ├── Subnet
+│       │   ├── Network Security Group
+│       │   └── Subnet to NSG association
+│       │
+│       ├── Module-based configuration
+│       │   ├── network-foundation module
+│       │   ├── dev environment
+│       │   └── test environment
+│       │
+│       └── Remote state backend
+│           ├── Resource Group
+│           ├── Storage Account
+│           ├── Blob Container
+│           └── dev.terraform.tfstate blob
+│
+└── CloudFormation Static Validation
+    └── AWS-native IaC templates
+        ├── VPC template structure
+        ├── Parameters
+        ├── Mappings
+        ├── Conditions
+        ├── Resources
+        ├── Outputs
+        └── cfn-lint validation
 ```
 
 ---
@@ -582,6 +600,7 @@ Azure resource modeling
 module structure
 environment separation
 remote state
+security validation
 cost-safe cloud validation
 ```
 
@@ -728,8 +747,6 @@ module.network_foundation.azurerm_network_security_group.main
 module.network_foundation.azurerm_subnet_network_security_group_association.main
 ```
 
-This confirms that Azure resources are created through the reusable Terraform module.
-
 ---
 
 ## Terraform Environment Separation
@@ -753,8 +770,6 @@ Both environments use the same reusable module:
 terraform/azure/modules/network-foundation/
 ```
 
-The environments pass different values into the same module.
-
 Environment comparison:
 
 | Setting | Dev | Test |
@@ -767,8 +782,6 @@ Environment comparison:
 | Subnet | `snet-ea-lab-dev-main` | `snet-ea-lab-test-main` |
 | NSG | `nsg-ea-lab-dev-main` | `nsg-ea-lab-test-main` |
 
-This demonstrates that the same Terraform module can create isolated infrastructure patterns for different environments.
-
 For Stage 5.2, the test environment was validated with `terraform plan` only.
 
 Reason:
@@ -776,20 +789,19 @@ Reason:
 ```text
 Stage 5.1 already validated real Azure deployment through the module.
 Stage 5.2 only needs to prove environment separation and module reuse.
-A test plan is enough to prove that the module generates different test resources.
 ```
 
 ---
 
 ## Terraform Remote State
 
-Current remote state stage:
+Remote state stage:
 
 ```text
 Stage 5.3 - Terraform Remote State with Azure Storage
 ```
 
-This stage introduces Terraform remote state using Azure Storage.
+This stage introduced Terraform remote state using Azure Storage.
 
 Before this stage, Terraform state was stored locally:
 
@@ -850,16 +862,6 @@ backend.tf
 backend.hcl.example
 ```
 
-`backend.tf` enables the AzureRM backend:
-
-```hcl
-terraform {
-  backend "azurerm" {}
-}
-```
-
-`backend.hcl.example` provides a safe template for local backend configuration.
-
 The real local backend configuration file is:
 
 ```text
@@ -867,12 +869,6 @@ backend.hcl
 ```
 
 This file is not committed to Git.
-
-Reason:
-
-```text
-backend.hcl can contain real backend values such as subscription ID and Storage Account name
-```
 
 Stage 5.3 validated:
 
@@ -887,22 +883,17 @@ dev environment apply with remote state
 Terraform state blob visible in Azure Portal
 ```
 
-Expected remote state blob:
-
-```text
-dev.terraform.tfstate
-```
 ---
 
 ## Terraform Security and Policy Validation
 
-Current security validation stage:
+Terraform security validation stage:
 
 ```text
 Stage 5.4 - Terraform Security and Policy Validation
 ```
 
-This stage adds static security and policy validation for Terraform code.
+This stage added static security and policy validation for Terraform code.
 
 The project uses:
 
@@ -912,11 +903,24 @@ Checkov
 GitHub Actions
 ```
 
-TFLint is used for Terraform linting and Azure-specific validation.
+TFLint is used for:
 
-Checkov is used for Infrastructure-as-Code security and compliance scanning.
+```text
+Terraform linting
+AzureRM-specific checks
+provider-specific validation
+code quality validation
+```
 
-Security validation workflow:
+Checkov is used for:
+
+```text
+Infrastructure-as-Code security scanning
+policy baseline
+security finding visibility
+```
+
+Security workflow:
 
 ```text
 .github/workflows/terraform-security-validation.yml
@@ -937,12 +941,12 @@ docs/security/terraform-security-validation.md
 The security workflow runs:
 
 ```text
-tflint --init
-tflint --recursive --config .tflint.hcl
+tflint --init --config .tflint.hcl
+TFLint checks for Terraform root directories
 checkov -d terraform --framework terraform --quiet --soft-fail
 ```
 
-The workflow does not run:
+The security workflow does not run:
 
 ```text
 terraform plan
@@ -950,16 +954,106 @@ terraform apply
 terraform destroy
 ```
 
-This means the security workflow does not create or modify Azure resources.
-
 Checkov currently runs in advisory mode:
 
 ```text
 --soft-fail
 ```
 
-This allows the project to collect a security baseline without breaking CI immediately.
+Remote state resources are protected from accidental deletion with:
 
+```hcl
+lifecycle {
+  prevent_destroy = true
+}
+```
+
+Protected resources:
+
+```text
+azurerm_storage_account.tfstate
+azurerm_storage_container.tfstate
+```
+
+---
+
+## CloudFormation Phase
+
+CloudFormation is introduced as AWS-native Infrastructure as Code practice.
+
+The current CloudFormation phase is static-validation only.
+
+No AWS resources are deployed.
+
+No AWS credentials are required.
+
+No AWS costs are generated.
+
+Current CloudFormation stage:
+
+```text
+Stage 6.1 - CloudFormation Basics with Local Static Validation
+```
+
+CloudFormation basics directory:
+
+```text
+cloudformation/basics/
+```
+
+Current template:
+
+```text
+cloudformation/basics/networking-basic.yml
+```
+
+The template defines:
+
+```text
+VPC
+Public subnet
+Optional private subnet
+Security group
+Outputs
+```
+
+The template demonstrates:
+
+```text
+AWSTemplateFormatVersion
+Description
+Parameters
+Mappings
+Conditions
+Resources
+Outputs
+Intrinsic functions
+Tags
+```
+
+Validation tool:
+
+```text
+cfn-lint
+```
+
+Validation command:
+
+```bash
+cfn-lint cloudformation/basics/networking-basic.yml
+```
+
+The command completed successfully during Stage 6.1.
+
+CloudFormation validation workflow:
+
+```text
+.github/workflows/cloudformation-validation.yml
+```
+
+The workflow installs `cfn-lint` and validates CloudFormation YAML templates.
+
+The workflow does not deploy stacks.
 
 ---
 
@@ -1069,298 +1163,50 @@ Terraform remote state bootstrap files:
 | `terraform/azure/bootstrap/remote-state/terraform.tfvars.example` | Safe example values |
 | `terraform/azure/bootstrap/remote-state/README.md` | Remote state bootstrap documentation |
 
-Local files not committed:
+Local Terraform files not committed:
 
 ```text
-terraform/azure/basics/terraform.tfvars
-terraform/azure/basics/terraform.tfstate
-terraform/azure/basics/terraform.tfstate.backup
-terraform/azure/basics/.terraform/
-
-terraform/azure/environments/dev/backend.hcl
-terraform/azure/environments/dev/terraform.tfvars
-terraform/azure/environments/dev/terraform.tfstate
-terraform/azure/environments/dev/terraform.tfstate.backup
-terraform/azure/environments/dev/.terraform/
-
-terraform/azure/environments/test/terraform.tfvars
-terraform/azure/environments/test/terraform.tfstate
-terraform/azure/environments/test/terraform.tfstate.backup
-terraform/azure/environments/test/.terraform/
-
-terraform/azure/bootstrap/remote-state/terraform.tfvars
-terraform/azure/bootstrap/remote-state/terraform.tfstate
-terraform/azure/bootstrap/remote-state/terraform.tfstate.backup
-terraform/azure/bootstrap/remote-state/.terraform/
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+backend.hcl
 ```
 
 Provider lock files can be committed:
 
 ```text
-terraform/azure/basics/.terraform.lock.hcl
-terraform/azure/environments/dev/.terraform.lock.hcl
-terraform/azure/environments/test/.terraform.lock.hcl
-terraform/azure/bootstrap/remote-state/.terraform.lock.hcl
-```
-
-Provider lock files keep provider versions reproducible.
-
----
-
-## Terraform Validation
-
-Terraform basics validation:
-
-```bash
-cd terraform/azure/basics
-
-terraform init -backend=false -input=false
-terraform fmt -check -recursive .
-terraform validate
-```
-
-Terraform dev environment validation:
-
-```bash
-cd terraform/azure/environments/dev
-
-terraform init -backend=false -input=false
-terraform fmt -check -recursive .
-terraform validate
-```
-
-Terraform test environment validation:
-
-```bash
-cd terraform/azure/environments/test
-
-terraform init -backend=false -input=false
-terraform fmt -check -recursive .
-terraform validate
-```
-
-Terraform remote state bootstrap validation:
-
-```bash
-cd terraform/azure/bootstrap/remote-state
-
-terraform init -backend=false -input=false
-terraform fmt -check -recursive .
-terraform validate
-```
-
-Terraform plan for dev environment:
-
-```bash
-cd terraform/azure/environments/dev
-
-terraform plan
-```
-
-Terraform plan for test environment:
-
-```bash
-cd terraform/azure/environments/test
-
-terraform plan
-```
-
-Terraform plan for remote state bootstrap:
-
-```bash
-cd terraform/azure/bootstrap/remote-state
-
-terraform plan
-```
-
-Expected Stage 5.3 bootstrap plan:
-
-```text
-Plan: 4 to add, 0 to change, 0 to destroy.
-```
-
-The plan contains:
-
-```text
-random_string.storage_suffix
-azurerm_resource_group.tfstate
-azurerm_storage_account.tfstate
-azurerm_storage_container.tfstate
-```
-
-Azure resources created by bootstrap:
-
-```text
-Resource Group
-Storage Account
-Blob Container
-```
-
-`random_string` is a Terraform resource, not an Azure resource.
-
-Remote backend initialization for dev:
-
-```bash
-cd terraform/azure/environments/dev
-
-terraform init -backend-config=backend.hcl -migrate-state
-terraform validate
-terraform plan
-```
-
-Expected remote backend state blob:
-
-```text
-dev.terraform.tfstate
+.terraform.lock.hcl
 ```
 
 ---
 
-## CloudFormation Phase
+## CloudFormation Files
 
-CloudFormation is planned as a future AWS-native Infrastructure as Code learning block.
+CloudFormation basics files:
 
-Because the current available cloud credits are Azure credits, the CloudFormation phase will use static validation and documentation only unless AWS deployment is explicitly added later.
-
-Planned CloudFormation approach:
-
-```text
-local templates
-YAML syntax
-Parameters
-Mappings
-Conditions
-Resources
-Outputs
-cfn-lint
-static validation
-nested stack design
-change set concept
-drift detection concept
-documentation
-```
-
-No AWS paid deployment is planned at the current stage.
-
----
-
-## Technologies Used
-
-| Technology | Purpose |
+| File | Purpose |
 |---|---|
-| Kali Linux WSL | Automation control workstation |
-| Hyper-V | Local virtualization platform |
-| Ubuntu Server | Managed Linux node operating system |
-| Ansible | Configuration management and orchestration |
-| Ansible Roles | Reusable automation structure |
-| Ansible Inventory | Managed host definition |
-| Ansible Vault | Local secret management |
-| community.postgresql | PostgreSQL automation collection |
-| Nginx | Web server |
-| PostgreSQL | Database server |
-| Prometheus Node Exporter | Linux metrics exporter |
-| Prometheus | Metrics collection |
-| Grafana | Metrics visualization |
-| PromQL | Metrics query language |
-| Terraform | Infrastructure as Code |
-| Terraform Modules | Reusable Infrastructure as Code structure |
-| Terraform Environments | Environment-specific Infrastructure as Code structure |
-| Terraform Remote State | Shared state storage model |
-| AzureRM Provider | Terraform provider for Azure |
-| Azure Student Subscription | Cloud practice environment |
-| Azure Resource Group | Azure resource container |
-| Azure Virtual Network | Azure networking |
-| Azure Subnet | Azure network segmentation |
-| Azure Network Security Group | Azure network filtering |
-| Azure Storage Account | Remote state storage backend |
-| Azure Blob Container | Terraform state blob storage |
-| yamllint | YAML validation |
-| ansible-lint | Ansible best-practice validation |
-| GitHub Actions | Static CI validation |
-| TFLint | Terraform linting and Azure-specific static checks |
-| Checkov | Infrastructure-as-Code security and policy scanning |
-| AWS CloudFormation | Planned AWS-native IaC static validation |
+| `cloudformation/basics/networking-basic.yml` | Basic CloudFormation networking template |
+| `cloudformation/basics/README.md` | CloudFormation basics documentation |
+
+CloudFormation validation workflow:
+
+| File | Purpose |
+|---|---|
+| `.github/workflows/cloudformation-validation.yml` | GitHub Actions workflow for cfn-lint validation |
 
 ---
 
-## Repository Structure
+## Validation Commands
 
-```text
-enterprise-automation-lab/
-│
-├── ansible/
-│   ├── ansible.cfg
-│   ├── requirements.yml
-│   ├── examples/
-│   │   └── vault.yml.example
-│   ├── inventories/
-│   │   ├── dev/
-│   │   └── prod/
-│   ├── playbooks/
-│   │   ├── site.yml
-│   │   ├── 00-preflight.yml
-│   │   ├── 01-bootstrap-linux.yml
-│   │   ├── 02-apply-linux-baseline.yml
-│   │   ├── 03-deploy-nginx.yml
-│   │   ├── 04-deploy-postgresql.yml
-│   │   ├── 05-deploy-node-exporter.yml
-│   │   ├── 06-deploy-prometheus.yml
-│   │   ├── 07-deploy-grafana.yml
-│   │   ├── 08-post-deployment-validation.yml
-│   │   ├── 09-backup-postgresql.yml
-│   │   └── 10-restore-postgresql-validation.yml
-│   └── roles/
-│       ├── linux_baseline/
-│       ├── nginx/
-│       ├── postgresql/
-│       ├── postgresql_backup/
-│       ├── node_exporter/
-│       ├── prometheus/
-│       └── grafana/
-│
-├── terraform/
-│   ├── azure/
-│   │   ├── basics/
-│   │   ├── bootstrap/
-│   │   │   └── remote-state/
-│   │   ├── environments/
-│   │   │   ├── dev/
-│   │   │   └── test/
-│   │   └── modules/
-│   │       └── network-foundation/
-│   └── docs/
-│       └── azure-cost-safety.md
-│
-├── cloudformation/
-│
-├── scripts/
-│   └── hyperv/
-│       └── create-lab-network.ps1
-│
-├── docs/
-│   ├── ansible-architecture.md
-│   ├── architecture.md
-│   ├── runbooks/
-│   ├── screenshots/
-│   └── troubleshooting/
-│
-└── .github/
-    └── workflows/
-        ├── ansible-validation.yml
-        └── terraform-validation.yml
-```
-
----
-
-## Local Static Validation
-
-Run from repository root:
+Run YAML validation:
 
 ```bash
 yamllint .
 ```
 
-Run from Ansible directory:
+Run Ansible validation:
 
 ```bash
 cd ansible
@@ -1369,10 +1215,6 @@ export ANSIBLE_VAULT_PASSWORD_FILE=.vault_pass.txt
 
 ansible-lint .
 ansible-playbook playbooks/site.yml --syntax-check
-ansible-playbook playbooks/00-preflight.yml --syntax-check
-ansible-playbook playbooks/08-post-deployment-validation.yml --syntax-check
-ansible-playbook playbooks/09-backup-postgresql.yml --syntax-check
-ansible-playbook playbooks/10-restore-postgresql-validation.yml --syntax-check
 ansible-playbook -i inventories/dev/hosts.ini playbooks/site.yml --syntax-check
 ansible-playbook -i inventories/prod/hosts.ini playbooks/site.yml --syntax-check
 ```
@@ -1383,40 +1225,42 @@ Run Terraform formatting:
 terraform fmt -check -recursive terraform
 ```
 
-Run Terraform basics validation:
+Run Terraform validation:
 
 ```bash
 cd terraform/azure/basics
-
 terraform init -backend=false -input=false
 terraform validate
 ```
-
-Run Terraform dev environment validation:
 
 ```bash
 cd terraform/azure/environments/dev
-
 terraform init -backend=false -input=false
 terraform validate
 ```
-
-Run Terraform test environment validation:
 
 ```bash
 cd terraform/azure/environments/test
-
 terraform init -backend=false -input=false
 terraform validate
 ```
 
-Run Terraform remote state bootstrap validation:
-
 ```bash
 cd terraform/azure/bootstrap/remote-state
-
 terraform init -backend=false -input=false
 terraform validate
+```
+
+Run CloudFormation validation:
+
+```bash
+cfn-lint cloudformation/basics/networking-basic.yml
+```
+
+Repository-wide CloudFormation validation:
+
+```bash
+find cloudformation -type f \( -name "*.yml" -o -name "*.yaml" \) -print0 | xargs -0 cfn-lint
 ```
 
 ---
@@ -1457,20 +1301,6 @@ PostgreSQL restore validation:
 ansible-playbook playbooks/site.yml --tags restore_validation
 ```
 
-Terraform Azure basics workflow:
-
-```bash
-cd terraform/azure/basics
-
-terraform init
-terraform validate
-terraform plan
-terraform apply
-terraform output
-terraform state list
-terraform destroy
-```
-
 Terraform Azure module-based dev workflow:
 
 ```bash
@@ -1505,28 +1335,21 @@ terraform validate
 terraform plan
 terraform apply
 terraform output
-terraform destroy
 ```
 
-Terraform dev remote backend workflow:
+CloudFormation workflow:
 
 ```bash
-cd terraform/azure/environments/dev
-
-terraform init -backend-config=backend.hcl -migrate-state
-terraform validate
-terraform plan
-terraform apply
-terraform state list
-terraform output
-terraform destroy
+cfn-lint cloudformation/basics/networking-basic.yml
 ```
+
+No CloudFormation deployment is performed.
 
 ---
 
 ## GitHub Actions Validation
 
-GitHub Actions validates Ansible and Terraform code.
+GitHub Actions validates Ansible, Terraform and CloudFormation code.
 
 ### Ansible Validation
 
@@ -1547,22 +1370,7 @@ site.yml syntax with dev inventory
 site.yml syntax with prod inventory
 ```
 
-Current Ansible playbooks checked by CI:
-
-```text
-site.yml
-00-preflight.yml
-01-bootstrap-linux.yml
-02-apply-linux-baseline.yml
-03-deploy-nginx.yml
-04-deploy-postgresql.yml
-05-deploy-node-exporter.yml
-06-deploy-prometheus.yml
-07-deploy-grafana.yml
-08-post-deployment-validation.yml
-09-backup-postgresql.yml
-10-restore-postgresql-validation.yml
-```
+---
 
 ### Terraform Validation
 
@@ -1594,7 +1402,6 @@ terraform apply
 terraform destroy
 ```
 
-This prevents Azure deployment from CI and keeps the workflow cost-safe.
 ---
 
 ### Terraform Security Validation
@@ -1613,9 +1420,27 @@ TFLint AzureRM rules
 Checkov Terraform security policies
 ```
 
-The workflow runs in static analysis mode only.
+The workflow does not deploy Azure resources.
 
-It does not authenticate to Azure and does not deploy resources.
+---
+
+### CloudFormation Validation
+
+Workflow file:
+
+```text
+.github/workflows/cloudformation-validation.yml
+```
+
+The CloudFormation workflow checks:
+
+```text
+CloudFormation YAML templates
+cfn-lint validation
+```
+
+The workflow does not deploy AWS resources.
+
 ---
 
 ## Documentation
@@ -1632,6 +1457,7 @@ Main documentation files:
 | `docs/runbooks/stage-05-01-terraform-azure-modules.md` | Terraform Azure modules stage runbook |
 | `docs/runbooks/stage-05-02-terraform-environment-separation.md` | Terraform environment separation stage runbook |
 | `docs/runbooks/stage-05-03-terraform-remote-state.md` | Terraform remote state stage runbook |
+| `docs/runbooks/stage-06-01-cloudformation-basics.md` | CloudFormation basics stage runbook |
 | `docs/security/terraform-security-validation.md` | Terraform security and policy validation documentation |
 | `terraform/docs/azure-cost-safety.md` | Azure cost safety rules for Terraform |
 | `terraform/azure/basics/README.md` | Terraform Azure basics documentation |
@@ -1639,6 +1465,7 @@ Main documentation files:
 | `terraform/azure/environments/dev/README.md` | Terraform dev environment documentation |
 | `terraform/azure/environments/test/README.md` | Terraform test environment documentation |
 | `terraform/azure/bootstrap/remote-state/README.md` | Terraform remote state bootstrap documentation |
+| `cloudformation/basics/README.md` | CloudFormation basics documentation |
 
 Stage runbooks are stored in:
 
@@ -1650,6 +1477,12 @@ Troubleshooting documents are stored in:
 
 ```text
 docs/troubleshooting/
+```
+
+Security documentation is stored in:
+
+```text
+docs/security/
 ```
 
 ---
@@ -1685,39 +1518,113 @@ docs/screenshots/stage-04-terraform-validation/
 docs/screenshots/stage-05-terraform-azure-modules/
 docs/screenshots/stage-05-terraform-environment-separation/
 docs/screenshots/stage-05-terraform-remote-state/
+docs/screenshots/stage-06-cloudformation-basics/
 ```
 
-Stage 5.1 screenshots:
+Stage 6.1 screenshots:
 
 ```text
-docs/screenshots/stage-05-terraform-azure-modules/
-├── 01-terraform-module-plan.png
-├── 02-terraform-module-apply-output-state.png
-├── 03-azure-portal-module-resource-group.png
-├── 04-azure-portal-module-tags.png
-└── 05-azure-portal-module-vnet-subnet-nsg.png
-```
-
-Stage 5.2 screenshots:
-
-```text
-docs/screenshots/stage-05-terraform-environment-separation/
-└── 01-terraform-test-environment-plan.png
-```
-
-Stage 5.3 screenshots:
-
-```text
-docs/screenshots/stage-05-terraform-remote-state/
-├── 01-remote-state-bootstrap-plan.png
-├── 02-remote-state-bootstrap-apply-output.png
-├── 03-dev-remote-backend-init-validate.png
-├── 04-dev-remote-backend-plan.png
-├── 05-dev-remote-state-apply-state-output.png
-└── 06-azure-portal-remote-state-blob.png
+docs/screenshots/stage-06-cloudformation-basics/
+└── 01-cfn-lint-local-validation.png
 ```
 
 Screenshots are used as runtime evidence that the lab was configured and validated successfully.
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Kali Linux WSL | Automation control workstation |
+| Hyper-V | Local virtualization platform |
+| Ubuntu Server | Managed Linux node operating system |
+| Ansible | Configuration management and orchestration |
+| Ansible Roles | Reusable automation structure |
+| Ansible Inventory | Managed host definition |
+| Ansible Vault | Local secret management |
+| community.postgresql | PostgreSQL automation collection |
+| Nginx | Web server |
+| PostgreSQL | Database server |
+| Prometheus Node Exporter | Linux metrics exporter |
+| Prometheus | Metrics collection |
+| Grafana | Metrics visualization |
+| PromQL | Metrics query language |
+| Terraform | Infrastructure as Code |
+| Terraform Modules | Reusable Infrastructure as Code structure |
+| Terraform Environments | Environment-specific Infrastructure as Code structure |
+| Terraform Remote State | Shared state storage model |
+| TFLint | Terraform linting and Azure-specific static checks |
+| Checkov | Infrastructure-as-Code security and policy scanning |
+| AzureRM Provider | Terraform provider for Azure |
+| Azure Student Subscription | Cloud practice environment |
+| Azure Resource Group | Azure resource container |
+| Azure Virtual Network | Azure networking |
+| Azure Subnet | Azure network segmentation |
+| Azure Network Security Group | Azure network filtering |
+| Azure Storage Account | Remote state storage backend |
+| Azure Blob Container | Terraform state blob storage |
+| AWS CloudFormation | AWS-native Infrastructure as Code templates |
+| cfn-lint | CloudFormation static validation |
+| yamllint | YAML validation |
+| ansible-lint | Ansible best-practice validation |
+| GitHub Actions | Static CI validation |
+
+---
+
+## Repository Structure
+
+```text
+enterprise-automation-lab/
+│
+├── ansible/
+│   ├── ansible.cfg
+│   ├── requirements.yml
+│   ├── examples/
+│   │   └── vault.yml.example
+│   ├── inventories/
+│   │   ├── dev/
+│   │   └── prod/
+│   ├── playbooks/
+│   └── roles/
+│
+├── terraform/
+│   ├── azure/
+│   │   ├── basics/
+│   │   ├── bootstrap/
+│   │   │   └── remote-state/
+│   │   ├── environments/
+│   │   │   ├── dev/
+│   │   │   └── test/
+│   │   └── modules/
+│   │       └── network-foundation/
+│   └── docs/
+│       └── azure-cost-safety.md
+│
+├── cloudformation/
+│   └── basics/
+│       ├── README.md
+│       └── networking-basic.yml
+│
+├── scripts/
+│   └── hyperv/
+│       └── create-lab-network.ps1
+│
+├── docs/
+│   ├── ansible-architecture.md
+│   ├── architecture.md
+│   ├── runbooks/
+│   ├── screenshots/
+│   ├── security/
+│   └── troubleshooting/
+│
+└── .github/
+    └── workflows/
+        ├── ansible-validation.yml
+        ├── terraform-validation.yml
+        ├── terraform-security-validation.yml
+        └── cloudformation-validation.yml
+```
 
 ---
 
@@ -1725,7 +1632,6 @@ Screenshots are used as runtime evidence that the lab was configured and validat
 
 | Stage | Goal |
 |---|---|
-| Stage 6.1 | CloudFormation basics with local static validation |
 | Stage 7.1 | CloudFormation advanced templates with static validation |
 | Stage 8 | Final IaC comparison and project summary |
 
@@ -1778,7 +1684,16 @@ Terraform module outputs
 Terraform environment separation
 Terraform remote state with Azure Storage
 Terraform AzureRM backend configuration
-Terraform CI validation
+Terraform linting with TFLint
+Terraform security scanning with Checkov
+CloudFormation template structure
+CloudFormation parameters
+CloudFormation mappings
+CloudFormation conditions
+CloudFormation resources
+CloudFormation outputs
+CloudFormation intrinsic functions
+CloudFormation validation with cfn-lint
 Azure Resource Group management
 Azure Virtual Network basics
 Azure Subnet basics
@@ -1786,6 +1701,7 @@ Azure Network Security Group basics
 Azure Storage Account basics
 Azure Blob Container basics
 Azure cost safety workflow
+AWS IaC static validation without deployment
 infrastructure documentation and runbooks
 ```
 
@@ -1806,21 +1722,20 @@ The project includes preflight and post-deployment validation.
 The project includes PostgreSQL backup and restore validation.
 The project includes final Ansible operations and architecture documentation.
 
-The Terraform phase is in progress.
+The Terraform Azure phase has an advanced baseline.
 
-Terraform is installed and used with AzureRM provider.
-Azure student subscription is used with strict cost safety rules.
 Stage 4.1 created a safe Azure networking foundation with Resource Group, VNet, Subnet, NSG and NSG association.
 Stage 4.2 added Terraform validation through GitHub Actions.
 Stage 5.1 introduced a reusable network-foundation module and a dev environment that calls this module.
 Stage 5.2 added test environment separation using the same network-foundation module with separate CIDR values and resource names.
 Stage 5.3 added Terraform remote state with Azure Storage and validated the dev environment state blob in Azure Portal.
-The Terraform workflow demonstrates init, validate, plan, apply, output, state list, destroy and remote backend initialization.
-Azure resources are destroyed after validation to protect student credits.
 Stage 5.4 added Terraform security and policy validation with TFLint, Checkov and a dedicated GitHub Actions workflow.
 
-CloudFormation is planned as a future local/static-validation learning phase.
+The CloudFormation phase has started.
+
+Stage 6.1 introduced CloudFormation basics with a networking template, Parameters, Mappings, Conditions, Resources, Outputs and cfn-lint validation.
+No CloudFormation deployment is performed.
+No AWS resources are created.
 ```
 
 ---
-

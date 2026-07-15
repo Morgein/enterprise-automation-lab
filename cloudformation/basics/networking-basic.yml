@@ -1,0 +1,167 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Basic CloudFormation networking template for the Enterprise Automation Lab.
+  This template is used for local/static validation only and is not deployed
+  to AWS in this stage.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+    Description: Environment name used for resource names and tags.
+
+  VpcCidr:
+    Type: String
+    Default: 10.60.0.0/16
+    Description: CIDR block for the VPC.
+
+  PublicSubnetCidr:
+    Type: String
+    Default: 10.60.1.0/24
+    Description: CIDR block for the public subnet.
+
+  PrivateSubnetCidr:
+    Type: String
+    Default: 10.60.2.0/24
+    Description: CIDR block for the private subnet.
+
+  CreatePrivateSubnet:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Controls whether the private subnet is created.
+
+  AllowedSshCidr:
+    Type: String
+    Default: 10.0.0.0/8
+    Description: Example CIDR allowed for SSH traffic in the security group.
+
+Mappings:
+  EnvironmentTagMap:
+    dev:
+      EnvironmentType: Development
+    test:
+      EnvironmentType: Testing
+
+Conditions:
+  ShouldCreatePrivateSubnet: !Equals [!Ref CreatePrivateSubnet, "true"]
+
+Resources:
+  LabVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub ea-lab-${EnvironmentName}-vpc
+        - Key: Project
+          Value: enterprise-automation-lab
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: EnvironmentType
+          Value: !FindInMap
+            - EnvironmentTagMap
+            - !Ref EnvironmentName
+            - EnvironmentType
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Stage
+          Value: cloudformation-basics
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LabVpc
+      CidrBlock: !Ref PublicSubnetCidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ea-lab-${EnvironmentName}-public-subnet
+        - Key: Project
+          Value: enterprise-automation-lab
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Stage
+          Value: cloudformation-basics
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Condition: ShouldCreatePrivateSubnet
+    Properties:
+      VpcId: !Ref LabVpc
+      CidrBlock: !Ref PrivateSubnetCidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ea-lab-${EnvironmentName}-private-subnet
+        - Key: Project
+          Value: enterprise-automation-lab
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Stage
+          Value: cloudformation-basics
+
+  LabSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub Basic security group for ${EnvironmentName}
+      VpcId: !Ref LabVpc
+      SecurityGroupIngress:
+        - Description: Example SSH rule for static validation only.
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AllowedSshCidr
+      SecurityGroupEgress:
+        - Description: Allow outbound traffic.
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ea-lab-${EnvironmentName}-sg
+        - Key: Project
+          Value: enterprise-automation-lab
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Stage
+          Value: cloudformation-basics
+
+Outputs:
+  VpcId:
+    Description: ID of the created VPC.
+    Value: !Ref LabVpc
+
+  PublicSubnetId:
+    Description: ID of the created public subnet.
+    Value: !Ref PublicSubnet
+
+  PrivateSubnetId:
+    Condition: ShouldCreatePrivateSubnet
+    Description: ID of the created private subnet.
+    Value: !Ref PrivateSubnet
+
+  SecurityGroupId:
+    Description: ID of the created security group.
+    Value: !Ref LabSecurityGroup
+
+  EnvironmentType:
+    Description: Human-readable environment type from the mapping.
+    Value: !FindInMap
+      - EnvironmentTagMap
+      - !Ref EnvironmentName
+      - EnvironmentType
